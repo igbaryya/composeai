@@ -2,6 +2,10 @@
 
 **The modern React composer for AI applications.**
 
+![ComposeAI composer — markdown, mentions, and links](https://i.ibb.co/PsKB3xyz/Screenshot-2026-06-02-at-19-19-11.png)
+
+![ComposeAI composer — attachments via paste, drop, or paperclip](https://i.ibb.co/GQy0PQk6/Screenshot-2026-06-02-at-19-20-39.png)
+
 `composeai` is a drop-in `<Composer />` for AI chat and assistant UIs — the input box behind copilots, support bots, agent workspaces, and any surface where users compose prompts for an LLM. It is built on Lexical, ships its own styles, and is designed to feel like a first-party ChatGPT or Slack composer on day one.
 
 ### Why composeai?
@@ -18,6 +22,8 @@ Building an AI chat input means solving dozens of UX problems at once: markdown 
 - **Tiny dependency surface** — `react`, `react-dom`, `lexical`, `@lexical/react`. Mermaid is an optional peer dep.
 - **BYO icons** — ships inlined SVGs; replace any one with your own component.
 - **Themeable** — `color` shorthand, full `tokens`, per-slot `classNames` + `sx`, no global CSS leakage.
+
+**Links:** [Live demo](https://igbaryya.github.io/composeai/) · [GitHub](https://github.com/igbaryya/composeai)
 
 ## Install
 
@@ -262,4 +268,4 @@ gracefully no-ops where neither is available.
 
 ## License
 
-MIT.
+MIT — see [LICENSE](./LICENSE).

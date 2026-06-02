@@ -17,7 +17,8 @@
   "files": [
     "dist",
     "src/composer.css",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "sideEffects": [
     "./src/composer.css"
@@ -71,12 +72,12 @@
     "attachments"
   ],
   "license": "MIT",
-  "homepage": "https://igbaryya.github.io/react-comporsor/",
+  "homepage": "https://igbaryya.github.io/composeai/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/igbaryya/react-comporsor.git"
+    "url": "git+https://github.com/igbaryya/composeai.git"
   },
   "bugs": {
-    "url": "https://github.com/igbaryya/react-comporsor/issues"
+    "url": "https://github.com/igbaryya/composeai/issues"
   }
 }

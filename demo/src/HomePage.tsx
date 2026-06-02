@@ -631,6 +631,8 @@ const CarouselSlide = forwardRef<HTMLDivElement, CarouselSlideProps>(
 
 // ─── Quick start ─────────────────────────────────────────────────────────
 
+const INSTALL_COMMAND = "npm install composeai";
+
 const QUICK_START_CODE = `import { Composer, type ComposerSubmitPayload } from "composeai";
 import "composeai/composer.css";
 
@@ -664,16 +666,32 @@ function QuickStartSection() {
         title="Drop it into your app"
         body={
           <>
-            Install with{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px]">
-              npm i {pkg.name}
-            </code>{" "}
-            and import the CSS once at your app entry. Every plugin is opt-in
-            via the <code className="font-mono">features</code> prop.
+            Install the package, import the CSS once at your app entry, and
+            opt into plugins via the{" "}
+            <code className="font-mono">features</code> prop. Peer deps:{" "}
+            <code className="font-mono">react</code>,{" "}
+            <code className="font-mono">react-dom</code>,{" "}
+            <code className="font-mono">lexical</code>,{" "}
+            <code className="font-mono">@lexical/react</code>.
           </>
         }
       />
-      <CodeBlock language="tsx" code={QUICK_START_CODE} />
+      <CodeBlock language="bash" code={INSTALL_COMMAND} />
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <strong className="font-medium text-foreground">Mermaid diagrams?</strong>{" "}
+        Only needed when you enable{" "}
+        <code className="font-mono">features.mermaid</code>. Either run{" "}
+        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px]">
+          npm install mermaid
+        </code>{" "}
+        (optional peer dep — lazy-loaded on first fence), or pass{" "}
+        <code className="font-mono">renderDiagram</code> on{" "}
+        <code className="font-mono">&lt;Composer /&gt;</code> to bring your own
+        renderer and skip the install entirely.
+      </p>
+      <div className="mt-6">
+        <CodeBlock language="tsx" code={QUICK_START_CODE} />
+      </div>
     </section>
   );
 }

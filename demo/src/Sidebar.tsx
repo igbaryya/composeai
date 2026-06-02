@@ -279,7 +279,7 @@ export function Sidebar({ open, onClose, activeId, onPick }: Props) {
 
         <div className="shrink-0 border-t border-border p-3">
           <a
-            href="https://github.com/"
+            href="https://github.com/igbaryya/composeai"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

@@ -2,6 +2,10 @@
 
 **The modern React composer for AI applications.**
 
+![ComposeAI composer — markdown, mentions, and links](https://i.ibb.co/PsKB3xyz/Screenshot-2026-06-02-at-19-19-11.png)
+
+![ComposeAI composer — attachments via paste, drop, or paperclip](https://i.ibb.co/GQy0PQk6/Screenshot-2026-06-02-at-19-20-39.png)
+
 A drop-in message composer for chatbots, copilots, agent interfaces, and any product that needs a ChatGPT-grade input — without building it from scratch. Built on Lexical, fully plugin-driven, and internally stateful: your chat logic stays simple — listen on `onSend`, wire to your model, done.
 
 Every feature you'd expect from a production AI chat surface is opt-in behind `features`:
@@ -13,7 +17,9 @@ Every feature you'd expect from a production AI chat surface is opt-in behind `f
 - **Streaming UX** — swap Send for Stop while the model is generating
 - **Quick prompts**, **Mermaid previews**, **ghost autocomplete**, and full theming
 
-This repository ships the **`composeai` npm library** and a live **demo gallery** that exercises every capability.
+This repository ships the **`composeai` npm library** and a live **[demo gallery](https://igbaryya.github.io/composeai/)** that exercises every capability.
+
+**Links:** [Live demo](https://igbaryya.github.io/composeai/) · [GitHub](https://github.com/igbaryya/composeai)
 
 ## Monorepo layout
 
@@ -29,10 +35,12 @@ This repository ships the **`composeai` npm library** and a live **demo gallery*
 
 ```bash
 npm install
-npm run dev         # demo at http://localhost:5173
+npm run dev         # local demo at http://localhost:5173
 npm run typecheck   # whole-monorepo TS check
 npm run build       # production build of the demo
 ```
+
+Or explore the hosted gallery at **[igbaryya.github.io/composeai](https://igbaryya.github.io/composeai/)**.
 
 ## What's inside the library
 
@@ -86,8 +94,8 @@ demo/                          live playground (Vite + Tailwind)
 
 ## Using the composer
 
-The full prop reference and a live API table lives at the demo's home page
-(`npm run dev` → root URL). A minimal snippet:
+The full prop reference and a live API table lives on the
+[demo home page](https://igbaryya.github.io/composeai/). A minimal snippet:
 
 ```tsx
 import {
@@ -133,4 +141,4 @@ home page so the gallery surfaces it.
 
 ## License
 
-MIT.
+MIT — see [LICENSE](./LICENSE).
