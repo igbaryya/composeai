@@ -1,0 +1,82 @@
+{
+  "name": "composeai",
+  "version": "0.1.0",
+  "description": "The modern React composer for AI applications — a drop-in Lexical-powered chat input with markdown, mentions, slash commands, attachments, voice, streaming stop, and opt-in plugins for copilots, chatbots, and agent UIs.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./composer.css": "./src/composer.css"
+  },
+  "files": [
+    "dist",
+    "src/composer.css",
+    "README.md"
+  ],
+  "sideEffects": [
+    "./src/composer.css"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "mermaid": "^10 || ^11"
+  },
+  "peerDependenciesMeta": {
+    "mermaid": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@lexical/react": "^0.45.0",
+    "lexical": "^0.45.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react",
+    "composeai",
+    "composer",
+    "ai-composer",
+    "ai-chat",
+    "chat-input",
+    "chatbox",
+    "copilot",
+    "llm",
+    "agent-ui",
+    "lexical",
+    "markdown",
+    "mentions",
+    "slash-commands",
+    "attachments"
+  ],
+  "license": "MIT",
+  "homepage": "https://igbaryya.github.io/react-comporsor/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igbaryya/react-comporsor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/igbaryya/react-comporsor/issues"
+  }
+}

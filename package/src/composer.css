@@ -1,0 +1,481 @@
+/* ComposeAI — component styles.
+ *
+ * Plain CSS (no Tailwind required) keyed off the CSS variables every consumer
+ * defines for their theme:
+ *   --background, --foreground, --primary, --primary-foreground,
+ *   --muted, --muted-foreground, --border, --card, --card-foreground,
+ *   --popover, --popover-foreground, --accent, --accent-foreground,
+ *   --destructive, --success, --warning
+ * Values are HSL components (e.g. `258 90% 62%`) so utilities can compose
+ * with opacities via `hsl(var(--primary) / 0.1)`.
+ */
+
+/* ----------------------------------------------------------------------------
+ * Composer-wide custom properties.
+ *
+ * These are READ by both the package CSS below and the Tailwind utility
+ * classes the components use (`bg-card`, `rounded-[28px]`, etc.). They are
+ * SET inline on the composer root by `<Composer />` itself when the consumer
+ * passes `tokens={...}`, so they only affect that one composer instance —
+ * never the consumer app's global theme.
+ *
+ *   --composer-radius        outer card corner radius (default 28px)
+ *   --composer-font-size     editor base font size (default 15px)
+ *   --composer-font-family   editor font family (default inherit)
+ * ------------------------------------------------------------------------- */
+
+[data-composer-root] {
+  border-radius: var(--composer-radius, 28px);
+}
+
+/* The gradient overlay and drop overlay sit absolutely inside the card and
+ * must mirror the outer corner radius. They no longer need a hardcoded
+ * value of their own. */
+[data-composer-root] > [data-composer-overlay] {
+  border-radius: inherit;
+}
+
+[data-composer-root] .composer-editor {
+  font-size: var(--composer-font-size, 15px);
+  font-family: var(--composer-font-family, inherit);
+}
+
+.composer-editor {
+  position: relative;
+  display: block;
+  width: 100%;
+  font-size: 15px;
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.composer-paragraph {
+  margin: 0;
+}
+.composer-paragraph + .composer-paragraph {
+  margin-top: 0.5rem;
+}
+
+.composer-quote {
+  margin: 0.5rem 0;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 2px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+
+.composer-h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; margin: 0.75rem 0 0.5rem; }
+.composer-h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; margin: 0.75rem 0 0.5rem; }
+.composer-h3 { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0.625rem 0 0.375rem; }
+.composer-h4 { font-size: 0.9375rem; font-weight: 600; margin: 0.5rem 0 0.375rem; }
+.composer-h5 { font-size: 0.875rem; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+.composer-h6 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0.5rem 0 0.25rem; }
+
+.composer-ul {
+  margin: 0.25rem 0;
+  padding-inline-start: 1.5rem;
+  list-style: disc;
+}
+.composer-ol {
+  margin: 0.25rem 0;
+  padding-inline-start: 1.5rem;
+  list-style: decimal;
+}
+.composer-ul > li + li,
+.composer-ol > li + li {
+  margin-top: 0.125rem;
+}
+.composer-ul::marker,
+.composer-ol::marker,
+.composer-li::marker {
+  color: hsl(var(--muted-foreground));
+}
+.composer-li {
+  padding-inline-start: 0.25rem;
+}
+.composer-li-nested {
+  list-style: circle;
+}
+
+.composer-bold { font-weight: 600; }
+.composer-italic { font-style: italic; }
+.composer-underline { text-decoration: underline; text-underline-offset: 2px; }
+.composer-strike { text-decoration: line-through; }
+
+.composer-code {
+  padding: 0.0625rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+.composer-code-block {
+  display: block;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.composer-link {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.composer-md-token {
+  color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* ----------------------------------------------------------------------------
+ * Slack-style block markdown.
+ * Paragraphs get a `data-md-block` attribute set by MarkdownPlugin based on
+ * the leading marker on their line. We style the entire paragraph for blocks
+ * while leaving the markers visible (rendered as muted tokens by the plugin).
+ * ------------------------------------------------------------------------- */
+
+/* Headings: font-scale/weight applied via `::first-line` so the heading
+ * styling stays confined to the marker's line even when the user inserts
+ * soft line breaks (Shift+Enter) inside the same paragraph. The margins
+ * stay on the paragraph itself because `::first-line` cannot affect box
+ * properties. */
+.composer-paragraph[data-md-block="heading-1"] {
+  margin-top: 0.5rem;
+  margin-bottom: 0.125rem;
+}
+.composer-paragraph[data-md-block="heading-1"]::first-line {
+  font-size: 1.625rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.composer-paragraph[data-md-block="heading-2"] {
+  margin-top: 0.5rem;
+  margin-bottom: 0.125rem;
+}
+.composer-paragraph[data-md-block="heading-2"]::first-line {
+  font-size: 1.375rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+}
+
+.composer-paragraph[data-md-block="heading-3"] {
+  margin-top: 0.375rem;
+}
+.composer-paragraph[data-md-block="heading-3"]::first-line {
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.composer-paragraph[data-md-block="heading-4"] {
+  margin-top: 0.25rem;
+}
+.composer-paragraph[data-md-block="heading-4"]::first-line {
+  font-size: 1.0625rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.composer-paragraph[data-md-block="heading-5"]::first-line {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.composer-paragraph[data-md-block="heading-6"]::first-line {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--muted-foreground));
+}
+
+.composer-paragraph[data-md-block="quote"] {
+  position: relative;
+  padding-inline-start: 0.875rem;
+  margin-inline-start: 0.125rem;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.composer-paragraph[data-md-block="quote"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  width: 3px;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.55);
+}
+
+/* Lists: visible indentation rail, marker recolored so it reads as an active
+ * bullet rather than a stray dash. Marker stays in flow so the caret can
+ * traverse it naturally. `text-indent` is direction-aware in modern engines
+ * (it indents from the line's start edge) so the negative value pulls the
+ * marker into the gutter on both sides. */
+.composer-paragraph[data-md-block="list-bullet"],
+.composer-paragraph[data-md-block="list-numbered"] {
+  padding-inline-start: 1.25rem;
+  text-indent: -0.875rem;
+}
+.composer-paragraph[data-md-block="list-bullet"] > .composer-md-token:first-child,
+.composer-paragraph[data-md-block="list-numbered"] > .composer-md-token:first-child {
+  color: hsl(var(--primary) / 0.85);
+  font-weight: 600;
+}
+.composer-paragraph[data-md-block="list-bullet"] + .composer-paragraph[data-md-block="list-bullet"],
+.composer-paragraph[data-md-block="list-numbered"] + .composer-paragraph[data-md-block="list-numbered"] {
+  margin-top: 0.125rem;
+}
+
+.composer-paragraph[data-md-block="code-fence-open"],
+.composer-paragraph[data-md-block="code-fence-close"],
+.composer-paragraph[data-md-block="code-line"] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  background: hsl(var(--muted));
+  padding: 0.125rem 0.625rem;
+  border-inline-start: 3px solid hsl(var(--primary) / 0.4);
+}
+.composer-paragraph[data-md-block^="code-"] + .composer-paragraph[data-md-block^="code-"] {
+  margin-top: 0;
+}
+.composer-paragraph[data-md-block="code-fence-open"] {
+  padding-top: 0.375rem;
+  border-start-start-radius: 0.375rem;
+  border-start-end-radius: 0.375rem;
+  color: hsl(var(--muted-foreground));
+}
+.composer-paragraph[data-md-block="code-fence-close"] {
+  padding-bottom: 0.375rem;
+  border-end-start-radius: 0.375rem;
+  border-end-end-radius: 0.375rem;
+  color: hsl(var(--muted-foreground));
+}
+/* Live-mode fence lines: the visible body is empty (the `` ``` `` chars are
+ * stashed on the BlockParagraphNode). Optional language tag from
+ * `data-md-lang` is surfaced as a small label so the user can still see
+ * what language they typed. The default `<br>` Lexical inserts in empty
+ * paragraphs gives the line just enough height to be selectable / clickable. */
+.composer-paragraph[data-md-block="code-fence-open"][data-md-lang]::before {
+  content: attr(data-md-lang);
+  display: inline-block;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground) / 0.7);
+  margin-inline-end: 0.5rem;
+}
+
+.composer-paragraph[data-md-block="hr"] {
+  position: relative;
+  color: transparent;
+  user-select: none;
+  margin: 0.5rem 0;
+  height: 1px;
+}
+.composer-paragraph[data-md-block="hr"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  border-top: 1px solid hsl(var(--border));
+}
+.composer-paragraph[data-md-block="hr"] .composer-md-token {
+  visibility: hidden;
+}
+
+/* Headings: muted leading `#` tokens get a bit more presence so they still
+ * read as scaffolding rather than disappearing into the body type. */
+.composer-paragraph[data-md-block^="heading-"] > .composer-md-token:first-child {
+  color: hsl(var(--muted-foreground) / 0.55);
+  font-weight: 600;
+}
+
+.composer-mention {
+  display: inline;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 0.375rem;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  font-weight: 500;
+  /* The chip wraps an editable TextNode — make sure its child looks
+     and acts like part of the chip surface. */
+  white-space: pre;
+}
+
+/* Trigger character ("@" / "#" / …) is rendered as a pseudo-element so
+   it is visible but not part of the editable text content. Backspacing
+   can only ever shrink the label inside the chip — the trigger glyph
+   stays put until the entire chip is removed (which happens
+   automatically when the label becomes empty, via
+   MentionNode#canBeEmpty = false). */
+.composer-mention::before {
+  content: attr(data-mention-prefix);
+  user-select: none;
+}
+
+.composer-token-attr      { color: hsl(var(--primary)); }
+.composer-token-comment   { color: hsl(var(--muted-foreground)); font-style: italic; }
+.composer-token-function  { color: hsl(var(--primary)); }
+.composer-token-operator  { color: hsl(var(--muted-foreground)); }
+.composer-token-property  { color: hsl(var(--foreground)); }
+.composer-token-punctuation { color: hsl(var(--muted-foreground)); }
+.composer-token-selector  { color: hsl(var(--success)); }
+.composer-token-variable  { color: hsl(var(--warning)); }
+
+/* Scoped thin scrollbar for the editor's max-height area. */
+.composer-editor {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+.composer-editor::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.composer-editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+.composer-editor::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+}
+
+/* Soft mount animation for small popovers (attachment type picker, …).
+   Subtle fade + 4px slide-down so the dropdown feels tied to its trigger
+   instead of popping abruptly into existence. */
+@keyframes composer-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.composer-popover-in {
+  animation: composer-popover-in 160ms ease-out;
+}
+
+/* ----------------------------------------------------------------------------
+ * Ghosted autocomplete overlay.
+ *
+ * GhostedAutoCompletePlugin portals a non-interactive div into the
+ * `.composer-editor-block` container. It contains:
+ *   [.composer-ghost-overlay-typed] — invisible spacer matching what the
+ *                                     user typed so the suggestion lines
+ *                                     up exactly with the caret.
+ *   [.composer-ghost-suggestion]    — the muted "ghost" remainder.
+ *
+ * The overlay sits BEHIND the contenteditable (`z-index: 0` vs the
+ * editor's stacking-context-implicit `auto`) and is `pointer-events:
+ * none` so it never intercepts clicks/selection. The padding utility
+ * classes set on the overlay element MUST mirror the editor's padding —
+ * `EditorShell.tsx`'s `editorClass` is the source of truth.
+ * ------------------------------------------------------------------------- */
+
+.composer-ghost-overlay {
+  font-size: var(--composer-font-size, 15px);
+  font-family: var(--composer-font-family, inherit);
+  line-height: 1.6;
+  /* `pre-wrap`: preserves spaces and lets a long suggestion wrap onto
+   *  the next line. `break-word` is the modern alias of `word-wrap` —
+   *  needed so an unbroken URL-style suggestion can still wrap inside
+   *  the editor's bounds.
+   *  Color is transparent on the container; only the suggestion span
+   *  re-colors itself. The typed span stays transparent so it occupies
+   *  caret-aligned space without bleeding any text into the overlay. */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: transparent;
+  /* Sit behind the contenteditable so the caret blink and selection
+   *  highlight (which Lexical paints on the editor itself) stay on top. */
+  z-index: 0;
+}
+
+.composer-ghost-overlay-typed {
+  /* `visibility: hidden` keeps the text in the box-model — its width
+   *  pushes the suggestion span to the right place — but never paints. */
+  visibility: hidden;
+}
+
+.composer-ghost-suggestion {
+  color: hsl(var(--muted-foreground) / 0.6);
+  /* Just enough emphasis to look like a suggestion (slightly italic
+   *  reads as "this isn't your text yet"). Skip if your design system
+   *  prefers a flat muted look. */
+  font-style: italic;
+}
+
+/* Inline-layout overrides: mirror the editor's 36px row line-height so
+ * the suggestion sits on the same baseline as the typed text. */
+.composer-ghost-overlay.composer-ghost-overlay--inline {
+  line-height: 2.25rem;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------------------
+ * Inline / single-line layout.
+ *
+ * Activated when `<Composer multiline={false} />`. The card collapses from a
+ * stacked column (attachments / editor / toolbar+send / mermaid) to a single
+ * horizontal bar (toolbar | editor | send), with the attachment tray and the
+ * drag overlay still rendering above where applicable.
+ *
+ * Wins over `--composer-radius` on the card itself because this rule
+ * targets the same element with an extra attribute, raising specificity.
+ * ------------------------------------------------------------------------- */
+
+[data-composer-root][data-composer-inline] {
+  border-radius: 9999px;
+}
+
+/* The contenteditable in inline mode needs its own line-height because the
+ * base `.composer-editor` rule (specificity 0,1,0) defaults to `1.6`, which
+ * shrinks the line box to ~24px and leaves typed text top-aligned inside
+ * the 36px row while the absolutely-positioned placeholder (its own
+ * line-height) appears centered — a visible mismatch the moment the user
+ * starts typing. The compound-class selector below raises specificity to
+ * 0,2,0 so the inline override always wins regardless of stylesheet load
+ * order, with the line-height matching the 36px row height so a single
+ * line of text is perfectly centered. */
+.composer-editor.composer-editor--inline {
+  line-height: 2.25rem; /* matches h-9 / leading-9 (36px) */
+  scrollbar-width: none;
+}
+.composer-editor.composer-editor--inline::-webkit-scrollbar {
+  display: none;
+}
+
+/* Lexical wraps every line in a block-level <p>. In inline mode we collapse
+ * those to inline so the editor scrolls horizontally instead of stacking
+ * vertically, and the inline content baseline aligns to the parent line
+ * box (centered, thanks to the 36px line-height above). */
+.composer-editor--inline .composer-paragraph,
+.composer-editor--inline p {
+  display: inline;
+  margin: 0;
+  white-space: nowrap;
+  line-height: inherit;
+}
+.composer-editor--inline .composer-paragraph + .composer-paragraph {
+  margin-top: 0;
+}
+
+/* The MermaidSlot is already gated out by the React tree when multiline is
+ * false, but this defensive rule keeps any stray `[data-mermaid-tile]` from
+ * showing if a consumer renders one manually inside an inline composer. */
+[data-composer-root][data-composer-inline] [data-mermaid-tile] {
+  display: none;
+}
