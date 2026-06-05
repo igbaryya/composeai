@@ -100,7 +100,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     if (!derived && !tokens) return undefined;
     return tokensToStyle({ ...derived, ...tokens });
   }, [color, tokens]);
-  const root = slotProps("root", "space-y-2", classNames, sx);
+  const root = slotProps("root", "composer-root", classNames, sx);
   const rootStyle = useMemo(
     () => ({ ...tokenStyle, ...root.style, ...style }),
     [tokenStyle, root.style, style],
@@ -127,6 +127,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     >
       <div
         dir={dir}
+        data-composer-scope=""
         className={cn(root.className, className)}
         style={Object.keys(rootStyle).length ? rootStyle : undefined}
       >
@@ -205,16 +206,7 @@ function ComposerCard({
   multiline,
 }: CardProps) {
   const { webEnabled, isDraggingFiles, classNames, sx } = useComposerContext();
-  const card = slotProps(
-    "card",
-    [
-      "group relative border border-border bg-card shadow-soft transition-all focus-within:border-primary/40 focus-within:shadow-glow",
-      webEnabled && "ring-1 ring-primary/20",
-      isDraggingFiles && "ring-2 ring-primary/60",
-    ],
-    classNames,
-    sx,
-  );
+  const card = slotProps("card", "composer-card", classNames, sx);
 
   // LexicalComposer must wrap everything that touches editor state, including
   // the toolbar and send button (so they can `useLexicalComposerContext()`).
@@ -237,12 +229,14 @@ function ComposerCard({
     <div
       data-composer-root=""
       data-composer-inline={multiline ? undefined : ""}
+      data-composer-web={webEnabled ? "" : undefined}
+      data-composer-dragging={isDraggingFiles ? "" : undefined}
       {...card}
     >
       <div
         aria-hidden
         data-composer-overlay=""
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-focus-within:opacity-100"
+        className="composer-overlay-glow"
         style={{
           background:
             "linear-gradient(135deg, hsl(var(--primary)/0.08) 0%, transparent 40%, hsl(var(--primary)/0.06) 100%)",
@@ -252,7 +246,7 @@ function ComposerCard({
         <div
           aria-hidden
           data-composer-overlay=""
-          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-primary/5 text-sm font-medium text-primary backdrop-blur-[1px]"
+          className="composer-overlay-drop"
         >
           Drop to attach
         </div>

@@ -281,14 +281,14 @@ function GhostOverlay({ typed, remainder, multiline }: OverlayProps) {
   // two padding strings in lock-step with `EditorShell.tsx`'s
   // `editorClass` — when one changes, change both.
   const paddingClass = multiline
-    ? "composer-ghost-overlay--multiline px-5 py-3.5"
-    : "composer-ghost-overlay--inline px-2 leading-9";
+    ? "composer-ghost-overlay--multiline"
+    : "composer-ghost-overlay--inline";
 
   return createPortal(
     <div
       aria-hidden
       data-composer-ghost=""
-      className={`composer-ghost-overlay pointer-events-none absolute inset-0 select-none ${paddingClass}`}
+      className={`composer-ghost-overlay ${paddingClass}`}
     >
       <span className="composer-ghost-overlay-typed" aria-hidden>
         {typed}

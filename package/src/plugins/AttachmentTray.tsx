@@ -14,7 +14,7 @@ export function AttachmentTray() {
 
   const tray = slotProps(
     "attachmentTray",
-    "flex flex-wrap gap-2 px-4 pt-3",
+    "composer-attachment-tray",
     classNames,
     sx,
   );

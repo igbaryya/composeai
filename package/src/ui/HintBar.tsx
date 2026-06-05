@@ -8,11 +8,7 @@ interface Props {
 }
 
 function Key({ children }: { children: ReactNode }) {
-  return (
-    <kbd className="rounded border border-border bg-card px-1 py-0.5 font-mono text-[10px]">
-      {children}
-    </kbd>
-  );
+  return <kbd className="composer-kbd">{children}</kbd>;
 }
 
 /** Render a shortcut spec like `"mod+/"` as a `<kbd>` chip the user can
@@ -113,22 +109,17 @@ export function HintBar({ hint }: Props) {
   }, [focusShortcut]);
 
   if (!hint) return null;
-  const hintProps = slotProps(
-    "hint",
-    "text-center text-[11px] text-muted-foreground",
-    classNames,
-    sx,
-  );
+  const hintProps = slotProps("hint", "composer-hint", classNames, sx);
   return (
     <p {...hintProps}>
       {hint === true ? (
         <>
           AI can make mistakes — verify important info.
           {defaultShortcuts ? (
-            <span className="hidden sm:inline"> {defaultShortcuts}</span>
+            <span className="composer-hint-sm"> {defaultShortcuts}</span>
           ) : null}
           {focusHint ? (
-            <span className="hidden md:inline">{focusHint}</span>
+            <span className="composer-hint-md">{focusHint}</span>
           ) : null}
         </>
       ) : (

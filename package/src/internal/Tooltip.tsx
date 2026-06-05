@@ -24,10 +24,10 @@ export interface TooltipProps {
 // physical (`left-1/2 -translate-x-1/2`) — the result is direction-agnostic
 // because the centre line is the same in either writing mode.
 const sideClasses: Record<Side, string> = {
-  top: "bottom-full left-1/2 mb-2 -translate-x-1/2",
-  bottom: "top-full left-1/2 mt-2 -translate-x-1/2",
-  left: "end-full top-1/2 me-2 -translate-y-1/2",
-  right: "start-full top-1/2 ms-2 -translate-y-1/2",
+  top: "composer-tooltip--top",
+  bottom: "composer-tooltip--bottom",
+  left: "composer-tooltip--left",
+  right: "composer-tooltip--right",
 };
 
 /** Minimal tooltip inlined into the composer package. */
@@ -73,17 +73,13 @@ export function Tooltip({
   );
 
   return (
-    <span className="relative inline-flex">
+    <span className="composer-tooltip-wrap">
       {trigger}
       {open && (
         <span
           id={id}
           role="tooltip"
-          className={cn(
-            "absolute z-50 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-md",
-            sideClasses[side],
-            className,
-          )}
+          className={cn("composer-tooltip", sideClasses[side], className)}
         >
           {content}
         </span>

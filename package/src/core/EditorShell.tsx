@@ -76,8 +76,8 @@ export function EditorShell({
   //              padding hugs the editor between toolbar and send so the
   //              caret never bumps into them.
   const editorClass = multiline
-    ? "composer-editor min-h-[44px] max-h-56 scrollbar-thin overflow-y-auto px-5 py-3.5"
-    : "composer-editor composer-editor--inline h-9 overflow-x-auto overflow-y-hidden whitespace-nowrap px-2 leading-9";
+    ? "composer-editor composer-editor--multiline"
+    : "composer-editor composer-editor--inline";
 
   const editor = slotProps("editor", editorClass, classNames, sx);
 
@@ -87,8 +87,8 @@ export function EditorShell({
   const editorResolved = resolveSx(sx?.editor);
   const placeholderBase = mirrorEditorPadding(editorResolved);
   const placeholderClass = multiline
-    ? "composer-placeholder pointer-events-none absolute inset-x-0 top-0 select-none px-5 py-3.5 text-[15px] leading-relaxed text-muted-foreground"
-    : "composer-placeholder pointer-events-none absolute inset-y-0 inset-x-0 select-none px-2 text-[15px] leading-9 text-muted-foreground truncate";
+    ? "composer-placeholder composer-placeholder--multiline"
+    : "composer-placeholder composer-placeholder--inline";
   const placeholderProps = slotProps(
     "placeholder",
     placeholderClass,
@@ -109,9 +109,9 @@ export function EditorShell({
   const editorBlock = (
     <div
       className={cn(
-        "composer-editor-block relative min-w-0",
+        "composer-editor-block",
         // Inline: the editor block is the flex child that fills the row.
-        !multiline && "flex-1",
+        !multiline && "composer-editor-block--inline",
       )}
     >
       {isMarkdown ? (
@@ -138,17 +138,13 @@ export function EditorShell({
     return (
       <>
         {header}
-        <div className="composer-inline-row flex items-center gap-1 px-2 py-1.5">
+        <div className="composer-inline-row">
           {toolbar && (
-            <div className="composer-inline-toolbar flex shrink-0 items-center">
-              {toolbar}
-            </div>
+            <div className="composer-inline-toolbar">{toolbar}</div>
           )}
           {editorBlock}
           {sendButton && (
-            <div className="composer-inline-send flex shrink-0 items-center">
-              {sendButton}
-            </div>
+            <div className="composer-inline-send">{sendButton}</div>
           )}
         </div>
         <HistoryPlugin />
@@ -163,7 +159,7 @@ export function EditorShell({
       {header}
       {editorBlock}
       {(toolbar || sendButton) && (
-        <div className="flex items-center justify-between px-3 pb-2.5">
+        <div className="composer-toolbar-row">
           {toolbar ?? <span />}
           {sendButton}
         </div>

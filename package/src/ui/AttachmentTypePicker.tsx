@@ -17,7 +17,6 @@
  * keeps it on the toolbar side in both LTR and RTL.
  */
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { cn } from "../internal/cn";
 import { useComposerContext } from "../core/ComposerProvider";
 import type { IconComponent } from "../internal/icons";
 import type { AttachmentTypeOption } from "../types";
@@ -154,7 +153,7 @@ export function AttachmentTypePicker({
   }, [open]);
 
   return (
-    <div className="relative">
+    <div className="composer-attach-picker">
       <input
         ref={fileInputRef}
         type="file"
@@ -177,7 +176,7 @@ export function AttachmentTypePicker({
         className={triggerClassName}
         style={triggerStyle}
       >
-        <TriggerIcon className="h-4 w-4" />
+        <TriggerIcon />
       </button>
 
       {open && (
@@ -187,11 +186,7 @@ export function AttachmentTypePicker({
           role="menu"
           aria-label="Attachment types"
           data-composer-popover="open"
-          className={cn(
-            "composer-popover-in absolute bottom-full start-0 z-30 mb-2 min-w-[200px] overflow-hidden",
-            "rounded-xl border border-border bg-popover p-1 text-popover-foreground",
-            "shadow-soft",
-          )}
+          className="composer-popover-in composer-attach-menu"
         >
           {types.map((type, index) => {
             const active = index === activeIndex;
@@ -204,25 +199,17 @@ export function AttachmentTypePicker({
                 role="menuitem"
                 type="button"
                 tabIndex={active ? 0 : -1}
+                data-active={active ? "" : undefined}
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => pick(index)}
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-start text-sm transition-colors",
-                  active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground hover:bg-accent/60",
-                )}
+                className="composer-attach-item"
               >
                 {type.icon ? (
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
-                    {type.icon}
-                  </span>
+                  <span className="composer-attach-item-icon">{type.icon}</span>
                 ) : null}
-                <span className="min-w-0 flex-1 truncate font-medium">
-                  {type.label}
-                </span>
+                <span className="composer-attach-item-label">{type.label}</span>
                 {type.description ? (
-                  <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                  <span className="composer-attach-item-desc">
                     {type.description}
                   </span>
                 ) : null}

@@ -29,27 +29,24 @@ export function ImageLightbox({ src, alt, onClose }: Props) {
       <div
         role="dialog"
         aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center p-6"
+        data-composer-scope=""
+        className="composer-lightbox"
         style={tokenStyle}
       >
         <div
           aria-hidden
-          className="absolute inset-0 bg-foreground/70 backdrop-blur-sm"
+          className="composer-lightbox-backdrop"
           onClick={onClose}
         />
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute end-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow-soft transition-colors hover:bg-accent"
+          className="composer-lightbox-close"
         >
-          <CloseIcon className="h-4 w-4" />
+          <CloseIcon />
         </button>
-        <img
-          src={src}
-          alt={alt}
-          className="relative max-h-[85vh] max-w-[85vw] rounded-lg object-contain shadow-xl"
-        />
+        <img src={src} alt={alt} className="composer-lightbox-img" />
       </div>
     </Portal>
   );

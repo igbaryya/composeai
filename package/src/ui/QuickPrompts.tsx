@@ -14,7 +14,6 @@
  * every parent re-render.
  */
 import { useMemo } from "react";
-import { cn } from "../internal/cn";
 import { useComposerContext } from "../core/ComposerProvider";
 import type { ComposerPromptsConfig } from "../types";
 
@@ -66,28 +65,17 @@ export function QuickPrompts({ prompts }: Props) {
   };
 
   return (
-    <div
-      role="group"
-      aria-label="Quick prompts"
-      className="flex flex-wrap items-center gap-2 px-1 pb-1"
-    >
+    <div role="group" aria-label="Quick prompts" className="composer-prompts">
       {display.map((p) => (
         <button
           key={p}
           type="button"
           onClick={() => handleClick(p)}
           title={p}
-          className={cn(
-            "group inline-flex max-w-full items-center gap-1.5 rounded-full",
-            "border border-border bg-card/60 px-3 py-1.5 text-xs",
-            "text-muted-foreground backdrop-blur transition-all",
-            "hover:-translate-y-px hover:border-primary/40 hover:bg-card",
-            "hover:text-foreground hover:shadow-sm",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-          )}
+          className="composer-prompt"
         >
-          <SparkleIcon className="h-3 w-3 shrink-0 text-primary opacity-70 group-hover:opacity-100" />
-          <span className="truncate" style={{ maxWidth: "32ch" }}>
+          <SparkleIcon />
+          <span className="composer-prompt-text" style={{ maxWidth: "32ch" }}>
             {p}
           </span>
         </button>

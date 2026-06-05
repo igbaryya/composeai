@@ -369,6 +369,7 @@ export function SmartPopover({ children, gap = 6 }: Props) {
   return (
     <div
       ref={ref}
+      data-composer-scope=""
       data-composer-popover-placement={
         placement?.bottom !== undefined ? "above-composer" : "below"
       }

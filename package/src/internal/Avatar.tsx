@@ -14,17 +14,14 @@ export function Avatar({ src, alt, size = 28, className }: Props) {
   const initial = (alt || "?").slice(0, 1).toUpperCase();
   return (
     <span
-      className={
-        "inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary" +
-        (className ? ` ${className}` : "")
-      }
+      className={"composer-avatar" + (className ? ` ${className}` : "")}
       style={{ width: size, height: size }}
     >
       {showImage ? (
         <img
           src={src}
           alt={alt}
-          className="h-full w-full object-cover"
+          className="composer-avatar-img"
           onError={() => setErrored(true)}
         />
       ) : (

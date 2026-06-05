@@ -203,7 +203,7 @@ export function VoiceButton() {
   const isRecording = state === "recording" || state === "starting";
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="composer-voice">
       <Tooltip
         content={isRecording ? "Stop recording" : "Voice input"}
         side="top"
@@ -214,23 +214,20 @@ export function VoiceButton() {
           aria-pressed={isRecording}
           onClick={() => (isRecording ? stop() : void start())}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
-            isRecording
-              ? "bg-destructive/10 text-destructive ring-1 ring-destructive/40"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            "composer-toolbar-btn composer-voice-btn",
             classNames?.toolbarButton,
           )}
         >
           {state === "transcribing" ? (
-            <VoiceRecordingIcon className="h-4 w-4 animate-spin" />
+            <VoiceRecordingIcon className="composer-spin" />
           ) : (
-            <VoiceIcon className={cn("h-4 w-4", isRecording && "animate-pulse")} />
+            <VoiceIcon className={cn(isRecording && "composer-pulse")} />
           )}
         </button>
       </Tooltip>
       {isRecording && (
-        <span className="flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-mono font-medium tabular-nums text-destructive">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-destructive" />
+        <span className="composer-voice-timer">
+          <span className="composer-voice-dot composer-pulse" />
           {formatSeconds(elapsed)}
         </span>
       )}

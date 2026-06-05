@@ -42,7 +42,7 @@ export function SlashMenu({
 
   const menu = slotProps(
     "slashMenu",
-    "z-50 w-72 origin-top animate-slide-up overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-soft",
+    "composer-menu composer-menu--slash",
     classNames,
     sx,
   );
@@ -58,13 +58,11 @@ export function SlashMenu({
       aria-busy={isLoading || undefined}
       {...menu}
     >
-      <ul ref={listRef} className="max-h-72 overflow-y-auto scrollbar-thin py-1">
+      <ul ref={listRef} className="composer-menu-list">
         {showSkeleton && <SlashSkeleton rows={4} />}
         {Object.entries(grouped).map(([group, entries]) => (
           <li key={group}>
-            <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {group}
-            </div>
+            <div className="composer-menu-group">{group}</div>
             <ul>
               {entries.map(({ item, index }) => (
                 <li
@@ -77,30 +75,22 @@ export function SlashMenu({
                     onSelect(index);
                   }}
                   onMouseEnter={() => onHover(index)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 text-sm",
-                    selectedIndex === index
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground",
-                    classNames?.slashItem,
-                  )}
+                  className={cn("composer-menu-item", classNames?.slashItem)}
                   style={itemStyle}
                 >
                   {item.icon && (
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                      {item.icon}
-                    </span>
+                    <span className="composer-menu-icon">{item.icon}</span>
                   )}
-                  <span className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate font-medium">{item.label}</span>
+                  <span className="composer-menu-text">
+                    <span className="composer-menu-label">{item.label}</span>
                     {item.description && (
-                      <span className="truncate text-[11px] text-muted-foreground">
+                      <span className="composer-menu-desc">
                         {item.description}
                       </span>
                     )}
                   </span>
                   {item.shortcut && (
-                    <span className="ms-auto rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    <span className="composer-menu-shortcut">
                       {item.shortcut}
                     </span>
                   )}
@@ -121,31 +111,26 @@ export function SlashMenu({
  */
 function SlashSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <li aria-hidden="true" className="px-2.5 py-1.5">
-      <div className="px-0.5 pb-1.5 pt-0.5">
-        <span className="block h-2 w-16 animate-pulse rounded bg-muted/70" />
-      </div>
-      <ul className="flex flex-col gap-1">
+    <li aria-hidden="true" className="composer-skel-row">
+      <span className="composer-skel-grouplabel composer-pulse" />
+      <ul className="composer-skel-group">
         {Array.from({ length: rows }).map((_, i) => (
-          <li
-            key={i}
-            className="flex items-center gap-2.5 rounded-md px-0 py-1.5"
-          >
-            <span className="h-7 w-7 shrink-0 animate-pulse rounded-md bg-muted" />
-            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <li key={i} className="composer-skel-line">
+            <span className="composer-skel-avatar composer-skel-avatar--square composer-pulse" />
+            <span className="composer-skel-text">
               <span
-                className="h-2.5 animate-pulse rounded bg-muted"
+                className="composer-skel-bar composer-pulse"
                 style={{ width: `${50 + ((i * 19) % 35)}%` }}
               />
               <span
-                className="h-2 animate-pulse rounded bg-muted/70"
+                className="composer-skel-bar--sm composer-pulse"
                 style={{ width: `${30 + ((i * 13) % 30)}%` }}
               />
             </span>
           </li>
         ))}
       </ul>
-      <span className="sr-only">Loading commands…</span>
+      <span className="composer-sr-only">Loading commands…</span>
     </li>
   );
 }

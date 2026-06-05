@@ -34,7 +34,7 @@ export function SendButton({ canSend, isStreaming, onSend, onStop }: Props) {
   if (isStreaming) {
     const stop = slotProps(
       "stopButton",
-      "inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background transition-transform hover:scale-105",
+      "composer-send-btn composer-send-btn--stop",
       classNames,
       sx,
     );
@@ -54,21 +54,11 @@ export function SendButton({ canSend, isStreaming, onSend, onStop }: Props) {
     }
     return (
       <button type="button" onClick={onStop} aria-label="Stop generating" {...stop}>
-        <StopIcon className="h-3.5 w-3.5 fill-current" />
+        <StopIcon />
       </button>
     );
   }
-  const send = slotProps(
-    "sendButton",
-    [
-      "inline-flex h-9 w-9 items-center justify-center rounded-full transition-all",
-      canSend
-        ? "bg-foreground text-background shadow-sm hover:scale-105"
-        : "bg-muted text-muted-foreground/60",
-    ],
-    classNames,
-    sx,
-  );
+  const send = slotProps("sendButton", "composer-send-btn", classNames, sx);
   // Custom send slot — same contract as the stop slot above. We pass
   // `canSend` rather than `disabled` so the consumer can use it for both
   // the DOM `disabled` attribute AND any other UI affordance (label
@@ -92,7 +82,7 @@ export function SendButton({ canSend, isStreaming, onSend, onStop }: Props) {
       aria-label="Send message"
       {...send}
     >
-      <SendIcon className="h-4 w-4" strokeWidth={2.5} />
+      <SendIcon strokeWidth={2.5} />
     </button>
   );
 }

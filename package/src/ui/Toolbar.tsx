@@ -10,8 +10,7 @@ interface Props {
   extras?: ReactNode;
 }
 
-const TOOLBAR_BTN_BASE =
-  "flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
+const TOOLBAR_BTN_BASE = "composer-toolbar-btn";
 
 export function Toolbar({ extras }: Props) {
   const {
@@ -42,7 +41,7 @@ export function Toolbar({ extras }: Props) {
     Array.isArray(attachmentsConfig.types) &&
     attachmentsConfig.types.length > 0;
 
-  const toolbar = slotProps("toolbar", "flex items-center gap-1", classNames, sx);
+  const toolbar = slotProps("toolbar", "composer-toolbar", classNames, sx);
   const toolbarBtn = slotProps("toolbarButton", TOOLBAR_BTN_BASE, classNames, sx);
 
   return (
@@ -68,7 +67,7 @@ export function Toolbar({ extras }: Props) {
               onClick={() => fileInputRef.current?.click()}
               {...toolbarBtn}
             >
-              <AttachIcon className="h-4 w-4" />
+              <AttachIcon />
             </button>
           </Tooltip>
         </>
@@ -103,7 +102,7 @@ export function Toolbar({ extras }: Props) {
               onClick={() => imageInputRef.current?.click()}
               {...toolbarBtn}
             >
-              <ImageIcon className="h-4 w-4" />
+              <ImageIcon />
             </button>
           </Tooltip>
         </>
@@ -114,15 +113,9 @@ export function Toolbar({ extras }: Props) {
           type="button"
           onClick={toggleWeb}
           aria-pressed={webEnabled}
-          className={cn(
-            "ms-0.5 inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors",
-            webEnabled
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            classNames?.toolbarButton,
-          )}
+          className={cn("composer-web-btn", classNames?.toolbarButton)}
         >
-          <WebIcon className="h-3.5 w-3.5" />
+          <WebIcon />
           Web
         </button>
       )}

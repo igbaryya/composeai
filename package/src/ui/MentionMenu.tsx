@@ -31,12 +31,7 @@ export function MentionMenu({
     if (el) el.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  const menu = slotProps(
-    "mentionMenu",
-    "z-50 w-64 origin-top animate-slide-up overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-soft",
-    classNames,
-    sx,
-  );
+  const menu = slotProps("mentionMenu", "composer-menu", classNames, sx);
   const itemStyle = useMemo(() => resolveSx(sx?.mentionItem), [sx]);
 
   // Only show skeleton when we genuinely have nothing to display — once
@@ -52,7 +47,7 @@ export function MentionMenu({
       aria-busy={isLoading || undefined}
       {...menu}
     >
-      <ul ref={listRef} className="max-h-72 overflow-y-auto scrollbar-thin py-1">
+      <ul ref={listRef} className="composer-menu-list">
         {showSkeleton ? (
           <MentionSkeleton rows={3} />
         ) : null}
@@ -67,32 +62,22 @@ export function MentionMenu({
               onSelect(index);
             }}
             onMouseEnter={() => onHover(index)}
-            className={cn(
-              "flex cursor-pointer items-center gap-2.5 px-2.5 py-1.5 text-sm",
-              selectedIndex === index
-                ? "bg-accent text-accent-foreground"
-                : "text-foreground",
-              classNames?.mentionItem,
-            )}
+            className={cn("composer-menu-item", classNames?.mentionItem)}
             style={itemStyle}
           >
             {item.avatarUrl ? (
               <Avatar src={item.avatarUrl} alt={item.label} />
             ) : item.icon ? (
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                {item.icon}
-              </span>
+              <span className="composer-menu-avatar">{item.icon}</span>
             ) : (
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+              <span className="composer-menu-avatar">
                 {item.label.slice(0, 1).toUpperCase()}
               </span>
             )}
-            <span className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate font-medium">{item.label}</span>
+            <span className="composer-menu-text">
+              <span className="composer-menu-label">{item.label}</span>
               {item.description && (
-                <span className="truncate text-[11px] text-muted-foreground">
-                  {item.description}
-                </span>
+                <span className="composer-menu-desc">{item.description}</span>
               )}
             </span>
           </li>
@@ -104,33 +89,30 @@ export function MentionMenu({
 
 /**
  * Three-line shimmer placeholder mirroring the avatar + label + description
- * layout of a real mention row. Pure CSS animation via the `animate-pulse`
- * utility — no JS keyframes, no layout thrash.
+ * layout of a real mention row. Pure CSS animation via the `composer-pulse`
+ * class — no JS keyframes, no layout thrash.
  */
 function MentionSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <li aria-hidden="true" className="px-2.5 py-1.5">
-      <ul className="flex flex-col gap-1">
+    <li aria-hidden="true" className="composer-skel-row">
+      <ul className="composer-skel-group">
         {Array.from({ length: rows }).map((_, i) => (
-          <li
-            key={i}
-            className="flex items-center gap-2.5 rounded-md px-0 py-1.5"
-          >
-            <span className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-muted" />
-            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <li key={i} className="composer-skel-line">
+            <span className="composer-skel-avatar composer-pulse" />
+            <span className="composer-skel-text">
               <span
-                className="h-2.5 animate-pulse rounded bg-muted"
+                className="composer-skel-bar composer-pulse"
                 style={{ width: `${60 + ((i * 17) % 30)}%` }}
               />
               <span
-                className="h-2 animate-pulse rounded bg-muted/70"
+                className="composer-skel-bar--sm composer-pulse"
                 style={{ width: `${35 + ((i * 23) % 25)}%` }}
               />
             </span>
           </li>
         ))}
       </ul>
-      <span className="sr-only">Loading suggestions…</span>
+      <span className="composer-sr-only">Loading suggestions…</span>
     </li>
   );
 }
