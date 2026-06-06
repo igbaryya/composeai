@@ -132,7 +132,11 @@ function wrapByFormat(text: string, format: number): string {
  *
  * Inter-paragraph separator: see {@link joinWithCommonMarkSpacing}.
  */
-export function toMarkdown(editor: LexicalEditor): string {
+export function toMarkdown(
+  editor: LexicalEditor,
+  opts?: { linkedMention?: boolean },
+): string {
+  const linkedMention = opts?.linkedMention === true;
   return editor.getEditorState().read(() => {
     const root = $getRoot();
 
@@ -168,7 +172,16 @@ export function toMarkdown(editor: LexicalEditor): string {
       let out = "";
       for (const child of paragraph.getChildren()) {
         if ($isMentionNode(child)) {
-          out += `${child.getMentionPrefix()}${child.getMentionLabel()}`;
+          const prefix = child.getMentionPrefix();
+          const label = child.getMentionLabel();
+          if (linkedMention) {
+            // `[@label](mention:id)` — the whole `@label` is the link text so
+            // the trigger stays glued to the label, and the stable id rides
+            // along in the destination for id-based resolution downstream.
+            out += `[${prefix}${label}](mention:${child.getMentionId()})`;
+          } else {
+            out += `${prefix}${label}`;
+          }
           continue;
         }
         if ($isLineBreakNode(child)) {

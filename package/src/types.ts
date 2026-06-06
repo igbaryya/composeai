@@ -274,6 +274,15 @@ export interface MentionConfig {
   trigger?: string;
   /** Limit suggestion count. Defaults to 8. */
   maxItems?: number;
+  /**
+   * When true, serialize mentions to markdown as a link that carries the
+   * stable id — `[<trigger><label>](mention:<id>)`, e.g. `[@orca](mention:u_42)`
+   * — so the receiving end can resolve mentions by id and render them as
+   * clickable chips. Default (false/omitted) keeps the plain `<trigger><label>`
+   * form. Only affects the `markdown` field of the submit payload; the
+   * structured `mentions: MentionRef[]` array is unchanged either way.
+   */
+  linkedMention?: boolean;
 }
 
 export interface SlashConfig {

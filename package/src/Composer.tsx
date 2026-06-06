@@ -330,9 +330,11 @@ function ComposerInner({
     // (re-attaching the same file is the retry path).
     if (uploadsBlocking) return;
     let payload: ComposerSubmitPayload | null = null;
+    const linkedMention =
+      typeof features.mentions === "object" && !!features.mentions.linkedMention;
     editor.getEditorState().read(() => {
       const { text, mentions } = collectPlainAndMentions(editor);
-      const markdown = toMarkdown(editor);
+      const markdown = toMarkdown(editor, { linkedMention });
       const trimmed = text.trim();
       // Always require *something* to send. Attachments-only is allowed by
       // default; `canSendOnlyAttachment: false` flips that off — the user
