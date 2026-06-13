@@ -79,6 +79,30 @@ the raw markdown. The submit payload still carries reconstructed markdown.
 />
 ```
 
+#### Multiple trigger symbols
+
+`slashCommands` also accepts an **array** of configs, so you can bind several
+trigger symbols at once — each with its own menu and per-command action. Give
+each a distinct `trigger`.
+
+```tsx
+<Composer
+  features={{
+    slashCommands: [
+      // "/" → commands that run an action (open a dialog, toggle a mode, …)
+      { trigger: "/", items: [
+        { id: "announce", label: "Announcement", onSelect: () => openAnnouncement() },
+      ] },
+      // "#" → issues that insert a link
+      { trigger: "#", items: (q) => searchIssues(q).then((rows) =>
+        rows.map((i) => ({ id: i.id, label: i.title, onSelect: (ctx) => ctx.insertMarkdown(`[#${i.number}](/issues/${i.number})`) })),
+      ) },
+    ],
+    mentions: { items: members }, // "@" stays its own separate menu
+  }}
+/>
+```
+
 ### Attachments — with upload pipeline
 
 ```tsx
@@ -205,7 +229,7 @@ const ref = useRef<ComposerHandle>(null);
 | `markdown`      | `boolean \| MarkdownConfig`   | `true`  | `{ mode: "hybrid" \| "live" }` — `live` hides markers Notion-style.                |
 | `attachments`   | `boolean \| AttachmentsConfig`| `false` | `{ file, image, accept, types, maxSize, maxCount }`.                               |
 | `mentions`      | `false \| MentionConfig`      | `false` | `{ items, trigger, maxItems }`. `items` may be async — UI shows a skeleton.        |
-| `slashCommands` | `false \| SlashConfig`        | `false` | `{ items, trigger, maxItems }`.                                                    |
+| `slashCommands` | `false \| SlashConfig \| SlashConfig[]` | `false` | `{ items, trigger, maxItems }`. Pass an **array** to register multiple trigger symbols at once (e.g. `/` commands + `#` issues), each with its own action menu. |
 | `voice`         | `boolean`                     | `false` | Web Speech + MediaRecorder fallback. Requires HTTPS or localhost.                  |
 | `mermaid`       | `boolean \| MermaidConfig`    | `false` | `{ keepSource }`. Optional peer dep — lazy import or pass `renderDiagram`.         |
 | `web`           | `boolean`                     | `false` | Adds a "Web" toggle pill — flags a turn as web-grounded for downstream routing.    |

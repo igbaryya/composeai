@@ -287,6 +287,12 @@ export interface MentionConfig {
 
 export interface SlashConfig {
   items: SlashCommand[] | ((query: string) => SlashCommand[] | Promise<SlashCommand[]>);
+  /**
+   * The symbol that opens this menu. Defaults to `"/"`. Any single character
+   * works — `"/"` for commands, `"#"` for issues/tags, `":"` for emoji, etc.
+   * When registering {@link ComposerFeatures.slashCommands | multiple configs},
+   * give each a DISTINCT trigger.
+   */
   trigger?: string;
   maxItems?: number;
 }
@@ -521,7 +527,28 @@ export interface ComposerFeatures {
   markdown?: boolean | MarkdownConfig;
   attachments?: boolean | AttachmentsConfig;
   mentions?: false | MentionConfig;
-  slashCommands?: false | SlashConfig;
+  /**
+   * Trigger-driven command menus. Each {@link SlashConfig} binds a trigger
+   * symbol (`trigger`, default `"/"`) to a list of {@link SlashCommand}s, and
+   * every command runs a callback action via `onSelect(ctx)` when chosen.
+   *
+   * Pass a SINGLE config for one trigger, or an ARRAY to register **multiple
+   * trigger symbols at once** — each with its own menu and actions. This lets a
+   * consumer wire, say, `"/"` → commands AND `"#"` → issues side-by-side
+   * (alongside the separate `@` mentions menu). Give each config a distinct
+   * `trigger`.
+   *
+   * @example
+   * ```tsx
+   * features={{
+   *   slashCommands: [
+   *     { trigger: "/", items: commands },   // each command's onSelect runs an action
+   *     { trigger: "#", items: issues },     // insert a link, etc.
+   *   ],
+   * }}
+   * ```
+   */
+  slashCommands?: false | SlashConfig | SlashConfig[];
   voice?: boolean;
   mermaid?: boolean | MermaidConfig;
   web?: boolean;

@@ -497,12 +497,16 @@ function ComposerInner({
       <AutoFocusPlugin enabled={!!autoFocus} />
       <PasteDropPlugin />
       {markdownEnabled && <MarkdownPlugin />}
-      {features.slashCommands && (
-        <SlashCommandPlugin
-          config={features.slashCommands}
-          onSubmit={submit}
-        />
-      )}
+      {features.slashCommands &&
+        // One typeahead per config — a single config or an array of them, so
+        // consumers can register several trigger symbols (each with its own
+        // action menu) at once. Keyed by trigger; give each a distinct symbol.
+        (Array.isArray(features.slashCommands)
+          ? features.slashCommands
+          : [features.slashCommands]
+        ).map((cfg, i) => (
+          <SlashCommandPlugin key={cfg.trigger ?? `slash-${i}`} config={cfg} onSubmit={submit} />
+        ))}
       {features.mentions && <MentionPlugin config={features.mentions} />}
       {features.ghostedAutoComplete && (
         <GhostedAutoCompletePlugin config={features.ghostedAutoComplete} />

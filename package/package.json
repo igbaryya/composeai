@@ -1,6 +1,6 @@
 {
   "name": "composeai",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "The modern React composer for AI applications — a drop-in Lexical-powered chat input with markdown, mentions, slash commands, attachments, voice, streaming stop, and opt-in plugins for copilots, chatbots, and agent UIs.",
   "type": "module",
   "main": "./dist/index.cjs",
