@@ -47,6 +47,17 @@
   font-family: var(--composer-font-family, inherit);
 }
 
+/* iOS Safari zooms the whole page when a focused field's font-size is below
+ * 16px. On touch devices, floor the editor (and its placeholder) at 16px so
+ * tapping the composer never triggers that zoom — while still honouring a
+ * LARGER `--composer-font-size` the consumer may have set, via `max()`. */
+@media (pointer: coarse) {
+  [data-composer-root] .composer-editor,
+  [data-composer-root] .composer-placeholder {
+    font-size: max(16px, var(--composer-font-size, 15px));
+  }
+}
+
 .composer-editor {
   position: relative;
   display: block;
@@ -252,9 +263,18 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;
-  background: hsl(var(--muted));
+  /* Translucent so the live diagram watermark (.composer-mermaid-backdrop)
+   * behind the fence shows through while the source stays readable. */
+  background: hsl(var(--muted) / 0.6);
   padding: 0.125rem 0.625rem;
   border-inline-start: 3px solid hsl(var(--primary) / 0.4);
+  /* The card is rounded (--composer-radius) but not `overflow: hidden` (that
+   * would clip the upward popovers). The editor's own padding is small, so a
+   * full-bleed code block's square corners poke past the card's rounded
+   * corners. Inset the block horizontally and break long tokens so the grey
+   * fill always stays inside the card outline. */
+  margin-inline: 0.5rem;
+  overflow-wrap: anywhere;
 }
 .composer-paragraph[data-md-block^="code-"] + .composer-paragraph[data-md-block^="code-"] {
   margin-top: 0;
@@ -282,6 +302,31 @@
   font-size: 11px;
   color: hsl(var(--muted-foreground) / 0.7);
   margin-inline-end: 0.5rem;
+}
+
+/* Syntax highlighting for fenced code (mermaid). Each token is a CodeTokenNode
+ * with a `--<kind>` class. Colours are overridable via `--composer-code-*`
+ * custom properties; the defaults read on both light and the translucent code
+ * fill. `ident` / `text` deliberately inherit the editor foreground. */
+.composer-code-tok--keyword {
+  color: var(--composer-code-keyword, hsl(280 58% 58%));
+  font-weight: 600;
+}
+.composer-code-tok--arrow {
+  color: var(--composer-code-arrow, hsl(190 72% 38%));
+}
+.composer-code-tok--string {
+  color: var(--composer-code-string, hsl(150 46% 38%));
+}
+.composer-code-tok--comment {
+  color: var(--composer-code-comment, hsl(var(--muted-foreground)));
+  font-style: italic;
+}
+.composer-code-tok--number {
+  color: var(--composer-code-number, hsl(28 78% 48%));
+}
+.composer-code-tok--punct {
+  color: var(--composer-code-punct, hsl(var(--muted-foreground)));
 }
 
 .composer-paragraph[data-md-block="hr"] {
@@ -500,7 +545,7 @@
   margin-top: 0;
 }
 
-/* The MermaidSlot is already gated out by the React tree when multiline is
+/* The mermaid preview is already gated out by the React tree when multiline is
  * false, but this defensive rule keeps any stray `[data-mermaid-tile]` from
  * showing if a consumer renders one manually inside an inline composer. */
 [data-composer-root][data-composer-inline] [data-mermaid-tile] {
@@ -536,6 +581,10 @@
  * ------------------------------------------------------------------------- */
 .composer-root,
 [data-composer-scope] {
+  /* Light is the baseline. Pinned explicitly so the composer's own native
+   * UI (caret, scrollbars) stays light even when the user's OS prefers dark
+   * but the host app is rendering light. */
+  color-scheme: light;
   --background: 0 0% 100%;
   --foreground: 222 18% 18%;
   --card: 0 0% 100%;
@@ -564,12 +613,23 @@
     0 20px 48px -20px hsl(220 13% 10% / 0.4);
 }
 
-/* Auto dark theme for hosts whose users prefer dark — keeps the composer
- * readable out of the box on a dark canvas. A consumer who wants an explicit
- * theme regardless of OS setting passes `tokens` (which wins inline). */
-@media (prefers-color-scheme: dark) {
-  .composer-root,
-  [data-composer-scope] {
+/* Dark theme — applied when the HOST app signals dark via the conventional
+ * `.dark` class or `[data-theme="dark"]` on any ancestor (the Tailwind /
+ * shadcn convention), so the composer follows the APP's theme, NOT the OS.
+ * A composer on a light app whose user's OS prefers dark therefore stays
+ * light — the host is the source of truth.
+ *
+ * (Previously this was an `@media (prefers-color-scheme: dark)` query, which
+ * darkened the composer based on the OS even when the surrounding app was
+ * light — the mismatch this replaces.)
+ *
+ * Consumers with custom theming are unaffected: `color` / `tokens` / `sx`
+ * apply inline on the scope element and always win over this stylesheet. */
+.dark .composer-root,
+.dark [data-composer-scope],
+[data-theme="dark"] .composer-root,
+[data-theme="dark"] [data-composer-scope] {
+    color-scheme: dark;
     --background: 222 16% 11%;
     --foreground: 210 20% 92%;
     --card: 222 16% 13%;
@@ -596,7 +656,6 @@
       0 12px 32px -16px hsl(0 0% 0% / 0.6);
     --composer-shadow-pop: 0 4px 12px hsl(0 0% 0% / 0.5),
       0 20px 48px -20px hsl(0 0% 0% / 0.7);
-  }
 }
 
 /* Shared keyframes / animation helpers. `composer-popover-in` already exists
@@ -749,6 +808,22 @@
 .composer-editor-block {
   position: relative;
   min-width: 0;
+  /* Own stacking context so the mermaid watermark (z-index: -1) tucks behind
+   * the editor text but still paints over the card background. */
+  isolation: isolate;
+}
+
+/* Live diagram watermark behind a ```mermaid code box. Measured + positioned
+ * imperatively (see DiagramBackdrop); we only theme it here. Sits beneath the
+ * translucent code fill and never intercepts clicks. */
+.composer-mermaid-backdrop {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.16;
 }
 .composer-editor-block--inline {
   flex: 1 1 0%;
@@ -789,6 +864,83 @@
   align-items: center;
 }
 
+/* ----------------------------------------------------------------------------
+ * Compact variant layout — the slim chat-bar: a single growable row of
+ * [ + ] [ editor ] [ voice · send ]. The "+" and the trailing cluster
+ * bottom-align so they stay pinned to the last line as the editor grows.
+ * ------------------------------------------------------------------------- */
+.composer-compact-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+}
+.composer-compact-actions,
+.composer-compact-send {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+  /* Pin to the bottom edge of the row so the controls line up with the last
+   * line of a multi-line draft (not floated to the vertical center). */
+  align-self: flex-end;
+  /* Keep a ~36px control band so single-line resting state lines up with the
+   * compact editor's min-height. */
+  min-height: 2.25rem;
+}
+
+/* Expanded compact bar — the actions footer beneath the full-width editor.
+ * `+` sits at the start, the voice·send cluster at the end. */
+.composer-compact-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem 0.375rem;
+}
+
+.composer-editor.composer-editor--compact {
+  min-height: 2.25rem; /* one line ≈ the control band height */
+  max-height: 12rem;
+  overflow-y: auto;
+  padding: 0.4375rem 0.5rem; /* ~7px top/bottom centers one line in 36px */
+  line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+.composer-editor--compact::-webkit-scrollbar {
+  width: 6px;
+}
+.composer-editor--compact::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+}
+
+.composer-placeholder--compact {
+  inset-inline: 0;
+  top: 0;
+  padding: 0.4375rem 0.5rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Quick-actions ("+") popover. Reuses .composer-attach-menu visuals; the
+ * trigger wrapper just needs relative positioning for the absolute menu, and
+ * any `toolbarExtras` get a divider above them. */
+.composer-quick-actions {
+  position: relative;
+}
+.composer-quick-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
 .composer-toolbar-row {
   display: flex;
   align-items: center;
@@ -821,6 +973,18 @@
 .composer-toolbar-btn:hover {
   background: hsl(var(--accent));
   color: hsl(var(--foreground));
+}
+/* Toggle-style custom actions (active: true) light up in the brand accent.
+ * The voice button's own pressed rule is more specific + later in the file,
+ * so it still wins for the mic. */
+.composer-toolbar-btn[aria-pressed="true"],
+.composer-toolbar-btn[data-active] {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.composer-toolbar-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .composer-toolbar-btn svg {
   height: 1rem;
@@ -1406,6 +1570,14 @@
   border-top: 1px solid hsl(var(--border) / 0.6);
   background: hsl(var(--muted) / 0.3);
   padding: 0.75rem 1rem;
+  /* The preview is the card's last, full-bleed child. The card is rounded but
+   * isn't `overflow: hidden` (that would clip the upward-opening "+" /
+   * attachment popovers), so without this the footer's square bottom corners
+   * poke past the card's rounded edge. Match the card's inner radius (outer
+   * radius minus the 1px border) so the footer tucks inside the corner. */
+  border-end-start-radius: calc(var(--composer-radius, 28px) - 1px);
+  border-end-end-radius: calc(var(--composer-radius, 28px) - 1px);
+  overflow: hidden;
 }
 .composer-mermaid-head {
   display: flex;
@@ -1446,6 +1618,23 @@
 .composer-mermaid-svg {
   height: 6rem;
   width: 10rem;
+}
+
+/* Compact variant: a slim strip of small thumbnails (no header banner). Each
+ * tile is a "quick image" the user taps to open the full diagram in the
+ * lightbox. */
+.composer-mermaid--compact {
+  padding: 0.375rem 0.5rem;
+}
+.composer-mermaid--compact .composer-mermaid-svg {
+  height: 2.75rem;
+  width: 4.25rem;
+}
+.composer-mermaid--compact .composer-mermaid-zoom {
+  height: 1rem;
+  width: 1rem;
+  inset-inline-end: 0.125rem;
+  top: 0.125rem;
 }
 .composer-mermaid-svg svg {
   height: 100%;
@@ -1493,6 +1682,70 @@
   background: hsl(var(--muted));
   padding-inline: 0.25rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Compact variant: the diagram preview collapses behind a small live
+ * thumbnail that sits beside the "+". A count badge appears when more than one
+ * diagram is detected; pressing it opens the full tiles in an upward popover. */
+.composer-mermaid-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.875rem;
+  width: 2.75rem;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background: hsl(var(--card));
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.composer-mermaid-trigger:hover,
+.composer-mermaid-trigger[data-active] {
+  border-color: hsl(var(--primary) / 0.4);
+}
+.composer-mermaid-thumb {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+.composer-mermaid-thumb svg {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+.composer-mermaid-count {
+  position: absolute;
+  top: -0.125rem;
+  inset-inline-end: -0.125rem;
+  display: flex;
+  min-width: 0.875rem;
+  height: 0.875rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.1875rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+.composer-mermaid-pop {
+  position: absolute;
+  bottom: 100%;
+  inset-inline-start: 0;
+  z-index: 30;
+  margin-bottom: 0.5rem;
+  max-width: min(80vw, 26rem);
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  padding: 0.625rem 0.75rem;
+  box-shadow: var(--composer-shadow-pop);
 }
 
 /* ----------------------------------------------------------------------------

@@ -55,7 +55,6 @@ export function HintBar({ hint }: Props) {
   const {
     multiline,
     submitOnEnter,
-    smartNewline,
     focusShortcut,
     classNames,
     sx,
@@ -74,14 +73,6 @@ export function HintBar({ hint }: Props) {
         </>
       );
     }
-    if (smartNewline && submitOnEnter) {
-      return (
-        <>
-          Press <Key>Enter</Key> to send a single line,{" "}
-          <Key>⌘/Ctrl + Enter</Key> to send once you've started a new line.
-        </>
-      );
-    }
     if (!submitOnEnter) {
       return (
         <>
@@ -94,7 +85,7 @@ export function HintBar({ hint }: Props) {
         Press <Key>Enter</Key> to send, <Key>Shift + Enter</Key> for newline.
       </>
     );
-  }, [multiline, submitOnEnter, smartNewline]);
+  }, [multiline, submitOnEnter]);
 
   const focusHint = useMemo(() => {
     if (!focusShortcut) return null;

@@ -33,18 +33,20 @@ import { MentionNode } from "./core/nodes/MentionNode";
 import { MarkdownTokenNode } from "./core/nodes/MarkdownTokenNode";
 import { BlockParagraphNode } from "./core/nodes/BlockParagraphNode";
 import { LinkTextNode } from "./core/nodes/LinkTextNode";
+import { CodeTokenNode } from "./core/nodes/CodeTokenNode";
 import { collectPlainAndMentions, toMarkdown } from "./core/serializer";
 import { KeyboardPlugin } from "./plugins/KeyboardPlugin";
 import { AutoFocusPlugin } from "./plugins/AutoFocusPlugin";
 import { PasteDropPlugin } from "./plugins/PasteDropPlugin";
 import { MarkdownPlugin } from "./plugins/MarkdownPlugin";
-import { MermaidPlugin } from "./plugins/MermaidPlugin";
+import { MermaidProvider, MermaidPreview } from "./plugins/MermaidPlugin";
 import { SlashCommandPlugin } from "./plugins/SlashCommandPlugin";
 import { MentionPlugin } from "./plugins/MentionPlugin";
 import { GhostedAutoCompletePlugin } from "./plugins/GhostedAutoCompletePlugin";
 import { AttachmentTray } from "./plugins/AttachmentTray";
 import { Toolbar } from "./ui/Toolbar";
 import { SendButton } from "./ui/SendButton";
+import { VoiceButton } from "./plugins/VoicePlugin";
 import { HintBar } from "./ui/HintBar";
 import { QuickPrompts } from "./ui/QuickPrompts";
 import { useComposerHandle } from "./hooks/useComposerHandle";
@@ -81,6 +83,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     toolbarExtras,
     closeMenusOnOutsideClick = true,
     mode = "markdown",
+    variant = "compact",
     multiline = true,
     submitOnEnter = true,
     smartNewline = true,
@@ -113,6 +116,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       closeMenusOnOutsideClick={closeMenusOnOutsideClick}
       attachmentOptions={attachmentOptions}
       mode={mode}
+      variant={variant}
       multiline={multiline}
       submitOnEnter={submitOnEnter}
       smartNewline={smartNewline}
@@ -146,6 +150,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           isStreaming={!!isStreaming}
           toolbarExtras={toolbarExtras}
           mode={mode}
+          variant={variant}
           multiline={multiline}
         />
         <HintBar hint={hint} />
@@ -166,6 +171,8 @@ interface CardProps {
   isStreaming: boolean;
   toolbarExtras: ComposerProps["toolbarExtras"];
   mode: NonNullable<ComposerProps["mode"]>;
+  /** See `ComposerProps.variant`. */
+  variant: "compact" | "full";
   /** `false` switches the card to the single-line / inline layout. */
   multiline: boolean;
 }
@@ -185,6 +192,7 @@ const RICH_NODES: InitialConfigType["nodes"] = [
   MarkdownTokenNode,
   BlockParagraphNode,
   LinkTextNode,
+  CodeTokenNode,
   BLOCK_PARAGRAPH_REPLACEMENT,
 ];
 // Plain-text mode only needs paragraphs (built-in) and mentions — the rest is
@@ -203,6 +211,7 @@ function ComposerCard({
   isStreaming,
   toolbarExtras,
   mode,
+  variant,
   multiline,
 }: CardProps) {
   const { webEnabled, isDraggingFiles, classNames, sx } = useComposerContext();
@@ -228,7 +237,8 @@ function ComposerCard({
   return (
     <div
       data-composer-root=""
-      data-composer-inline={multiline ? undefined : ""}
+      data-composer-variant={variant}
+      data-composer-inline={variant === "full" && !multiline ? "" : undefined}
       data-composer-web={webEnabled ? "" : undefined}
       data-composer-dragging={isDraggingFiles ? "" : undefined}
       {...card}
@@ -255,6 +265,7 @@ function ComposerCard({
         <ComposerInner
           placeholder={placeholder}
           mode={mode}
+          variant={variant}
           multiline={multiline}
           handleRef={handleRef}
           onSend={onSend}
@@ -274,6 +285,7 @@ function ComposerCard({
 interface InnerProps {
   placeholder: string;
   mode: NonNullable<ComposerProps["mode"]>;
+  variant: "compact" | "full";
   multiline: boolean;
   handleRef: React.ForwardedRef<ComposerHandle>;
   onSend?: ComposerProps["onSend"];
@@ -289,6 +301,7 @@ interface InnerProps {
 function ComposerInner({
   placeholder,
   mode,
+  variant,
   multiline,
   handleRef,
   onSend,
@@ -315,6 +328,12 @@ function ComposerInner({
   const markdownEnabled = mode === "markdown" && features.markdown;
   const [hasText, setHasText] = useState<boolean>(
     !!initialValue && initialValue.trim().length > 0,
+  );
+  // Tracks whether the editor holds more than one line — drives the compact
+  // variant's reflow (single row → editor-on-top with an actions footer,
+  // ChatGPT-style) once the user presses Enter / Shift+Enter.
+  const [isMultiLine, setIsMultiLine] = useState<boolean>(
+    !!initialValue && initialValue.includes("\n"),
   );
 
   const onSendRef = useRef(onSend);
@@ -435,8 +454,12 @@ function ComposerInner({
   useEffect(() => {
     return editor.registerUpdateListener(() => {
       editor.getEditorState().read(() => {
-        const text = $getRoot().getTextContent().trim();
-        setHasText(text.length > 0);
+        const root = $getRoot();
+        const text = root.getTextContent();
+        setHasText(text.trim().length > 0);
+        // More than one top-level paragraph, or a soft break inside one,
+        // means the bar should expand into its stacked (footer) layout.
+        setIsMultiLine(root.getChildrenSize() > 1 || text.includes("\n"));
       });
     });
   }, [editor]);
@@ -463,8 +486,15 @@ function ComposerInner({
     });
   }, [editor, registerRunPrompt, submit]);
 
-  const toolbarSlot = <Toolbar extras={toolbarExtras} />;
-  const sendButtonSlot = (
+  const isCompact = variant === "compact";
+  // Mermaid previews depend on a ```fence forming, which needs newlines. The
+  // inline (`multiline === false`) layout can't form one, so we only run the
+  // detector when `multiline` is on and the markdown mermaid feature is enabled.
+  const mermaidActive = multiline && mode === "markdown" && !!features.mermaid;
+  const toolbarSlot = (
+    <Toolbar extras={toolbarExtras} variant={variant} submit={submit} />
+  );
+  const sendButton = (
     <SendButton
       canSend={
         // Same gate as `submit`, kept in sync so the disabled state is
@@ -477,20 +507,37 @@ function ComposerInner({
       onStop={onStop}
     />
   );
+  // In the compact variant the voice button leaves the toolbar (which has
+  // collapsed into the "+" popover) and floats beside Send as a trailing
+  // cluster. In the full variant voice stays in the toolbar and Send is
+  // rendered on its own.
+  const sendButtonSlot =
+    isCompact && features.voice ? (
+      <>
+        <VoiceButton />
+        {sendButton}
+      </>
+    ) : (
+      sendButton
+    );
 
-  return (
+  const content = (
     <>
       <EditorShell
         placeholder={placeholder}
         mode={mode}
+        variant={variant}
         multiline={multiline}
+        expanded={isCompact && isMultiLine}
         header={<AttachmentTray />}
         toolbar={toolbarSlot}
         sendButton={sendButtonSlot}
-        // Inline mode can't form a ```mermaid fence (no newlines), so we
-        // skip the slot entirely — saves a mount and a `<MermaidPlugin>`
-        // subscription, and keeps the card visually a single bar.
-        footer={multiline ? <MermaidSlot /> : null}
+        // Diagram preview placement differs by variant. The `full` layout has
+        // room for an always-on preview row, so it renders inline as a footer.
+        // The `compact` chat-bar instead collapses diagrams behind a trigger
+        // beside the "+" (see <MermaidQuickAction> in the compact Toolbar), so
+        // it gets no footer here — the <MermaidProvider> below feeds both.
+        footer={mermaidActive && !isCompact ? <MermaidPreview /> : null}
       />
 
       <KeyboardPlugin onSubmit={submit} />
@@ -513,10 +560,9 @@ function ComposerInner({
       )}
     </>
   );
-}
 
-function MermaidSlot() {
-  const { features, mode } = useComposerContext();
-  if (mode !== "markdown" || !features.mermaid) return null;
-  return <MermaidPlugin />;
+  // When mermaid is active, wrap the whole subtree in the detector/provider so
+  // both the inline footer (full) and the compact "+" quick action can read the
+  // detected diagrams from context.
+  return mermaidActive ? <MermaidProvider>{content}</MermaidProvider> : content;
 }

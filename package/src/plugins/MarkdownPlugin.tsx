@@ -70,6 +70,12 @@ import {
   $createLinkTextNode,
   $isLinkTextNode,
 } from "../core/nodes/LinkTextNode";
+import {
+  $createCodeTokenNode,
+  $isCodeTokenNode,
+  type CodeTokenKind,
+} from "../core/nodes/CodeTokenNode";
+import { tokenizeMermaidLine } from "./mermaid-highlight";
 import { useComposerContext } from "../core/ComposerProvider";
 import type { MarkdownMode } from "../types";
 import { tokenize, type InlineFormat, type Token } from "./markdown-tokenizer";
@@ -93,11 +99,13 @@ const FORMAT_FLAGS: Record<InlineFormat, number> = {
 };
 
 interface DesiredNode {
-  kind: "text" | "token" | "link";
+  kind: "text" | "token" | "link" | "code";
   text: string;
   format: number;
   /** Populated for `link` kind only — the URL to stash on the LinkTextNode. */
   url?: string;
+  /** Populated for `code` kind only — the syntax-highlight token class. */
+  codeKind?: CodeTokenKind;
 }
 
 function readCurrentChildren(paragraph: ParagraphNode): DesiredNode[] | null {
@@ -114,6 +122,13 @@ function readCurrentChildren(paragraph: ParagraphNode): DesiredNode[] | null {
       });
     } else if ($isMarkdownTokenNode(child)) {
       out.push({ kind: "token", text: child.getTextContent(), format: 0 });
+    } else if ($isCodeTokenNode(child)) {
+      out.push({
+        kind: "code",
+        text: child.getTextContent(),
+        format: 0,
+        codeKind: child.getCodeKind(),
+      });
     } else if ($isTextNode(child)) {
       out.push({
         kind: "text",
@@ -143,6 +158,7 @@ function nodesEqual(a: DesiredNode[], b: DesiredNode[]): boolean {
     if (aKind !== bKind) return false;
     if (ai.text !== bi.text) return false;
     if (ai.format !== bi.format) return false;
+    if (ai.codeKind !== bi.codeKind) return false;
   }
   return true;
 }
@@ -457,8 +473,21 @@ function $applyStyling(
       trailingDropForOffsetMap = body.length;
       body = "";
     } else if (body.length > 0) {
-      // Hybrid mode, or code-line content — render verbatim.
-      desired.push({ kind: "text", text: body, format: 0 });
+      // Hybrid mode, or code-line content. Mermaid fences get per-token
+      // syntax colouring (text is preserved exactly — every char lands in one
+      // token); any other language renders verbatim.
+      if (block.kind === "code-line" && block.lang === "mermaid") {
+        for (const tok of tokenizeMermaidLine(body)) {
+          desired.push({
+            kind: "code",
+            text: tok.text,
+            format: 0,
+            codeKind: tok.kind,
+          });
+        }
+      } else {
+        desired.push({ kind: "text", text: body, format: 0 });
+      }
     }
   } else if (block.kind === "hr") {
     // HR is a special case: in hybrid mode the whole line is a token so
@@ -610,6 +639,8 @@ function $applyStyling(
   for (const node of desired) {
     if (node.kind === "token") {
       paragraph.append($createMarkdownTokenNode(node.text));
+    } else if (node.kind === "code") {
+      paragraph.append($createCodeTokenNode(node.text, node.codeKind));
     } else if (node.kind === "link") {
       const t = $createLinkTextNode(node.text, node.url ?? "");
       if (node.format !== 0) t.setFormat(node.format);

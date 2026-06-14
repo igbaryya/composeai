@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
-  $getRoot,
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
@@ -39,20 +38,6 @@ function $isInsideCodeFence(): boolean {
 
   const block = $detectBlockFor(top);
   return block.kind === "code-line" || block.kind === "code-fence-open";
-}
-
-/**
- * Whether the editor currently holds more than one line of content —
- * either multiple top-level paragraphs or a single paragraph with one
- * or more soft line breaks. Used by the smart-newline behavior to
- * decide whether plain Enter should submit or insert a line break.
- *
- * Run inside a `editor.getEditorState().read(...)` callback.
- */
-function $hasMultiLineContent(): boolean {
-  const root = $getRoot();
-  if (root.getChildrenSize() > 1) return true;
-  return root.getTextContent().includes("\n");
 }
 
 /**
@@ -164,21 +149,21 @@ function $handleListContinuation(): boolean {
  *     the universal "force send" gesture).
  *   - Shift+Enter: insert a hard paragraph break (NOT a soft
  *     `LineBreakNode`) so the markdown plugin can tokenize each line
- *     independently. Swallowed when `multiline` is false.
+ *     independently. This is the newline gesture for prose. Swallowed
+ *     when `multiline` is false.
  *   - Inside an open code fence: defer to Lexical so Enter splits the
  *     paragraph into a new code line — unless `multiline` is false.
- *   - Plain Enter, `multiline` false: submit when `submitOnEnter`, else
- *     swallow (single-line input with no submit affordance).
- *   - Plain Enter, `multiline` true, `smartNewline` true: insert a
- *     newline once the editor already holds more than one line;
- *     otherwise submit (when `submitOnEnter`). When the cursor sits in
- *     a markdown list paragraph (`- `, `* `, `+ `, `N. `) the list is
- *     continued instead (next marker auto-inserted, double-Enter exits)
- *     — this fires before any submit decision so a single bullet line
- *     can be extended without an accidental send.
- *   - Plain Enter, `multiline` true, `smartNewline` false: submit when
- *     `submitOnEnter`, else insert a newline (Lexical default). List
- *     continuation is intentionally off in this mode.
+ *   - Inside a markdown list paragraph (`- `, `* `, `+ `, `N. `), when
+ *     `smartNewline` is on: Enter continues the list (next marker
+ *     auto-inserted, numbers incremented); Enter on an empty item exits
+ *     the list, leaving a plain line where the next Enter sends. This is
+ *     the ONLY place plain Enter inserts a line rather than submitting.
+ *   - Plain Enter everywhere else: submit when `submitOnEnter`, else a
+ *     no-op. Crucially this no longer depends on how many lines the
+ *     editor already holds — Enter sends whether the draft is one line
+ *     or twenty (use Shift+Enter to add lines). Earlier builds blocked
+ *     Enter from sending once a second line existed; that surprised
+ *     users into Cmd/Ctrl+Enter and has been removed.
  *
  * Slash/mention menus still get first refusal via the
  * `data-composer-popover="open"` marker.
@@ -254,10 +239,8 @@ export function KeyboardPlugin({ onSubmit }: Props) {
         // Inside a fenced code block we always want a new code line,
         // unless multi-line content is disallowed entirely.
         let inCodeFence = false;
-        let hasMultiLine = false;
         editor.getEditorState().read(() => {
           inCodeFence = $isInsideCodeFence();
-          hasMultiLine = $hasMultiLineContent();
         });
         if (inCodeFence) {
           if (!multiline) {
@@ -276,12 +259,12 @@ export function KeyboardPlugin({ onSubmit }: Props) {
           return trySubmit(event);
         }
 
-        // Smart list continuation: when typing a markdown bullet or
-        // numbered item, Enter continues the list (auto-incrementing
-        // numbers, preserving the bullet character) and Enter on an
-        // empty item exits the list. Runs before the submit / smart
-        // newline branches so a single-line bullet doesn't get sent
-        // when the user clearly meant to add a second item.
+        // List continuation: when typing a markdown bullet or numbered
+        // item, Enter continues the list (auto-incrementing numbers,
+        // preserving the bullet character) and Enter on an empty item
+        // exits the list. This is the only place plain Enter inserts a
+        // line instead of submitting — everywhere else Enter sends and
+        // Shift+Enter is the newline gesture.
         //
         // NB: we call `$handleListContinuation` directly, NOT via
         // `editor.update(...)`. Lexical dispatches KEY_ENTER_COMMAND
@@ -296,12 +279,6 @@ export function KeyboardPlugin({ onSubmit }: Props) {
             return true;
           }
         }
-
-        // Smart newline: once the editor holds >1 line, plain Enter
-        // adds a newline instead of submitting. Cmd/Ctrl+Enter (handled
-        // above) is the way to send. This protects long drafts from
-        // accidental submission.
-        if (smartNewline && hasMultiLine) return false;
 
         if (!submitOnEnter) return false;
 

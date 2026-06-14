@@ -40,10 +40,24 @@ interface EditorShellProps {
   placeholder: string;
   mode: Mode;
   /**
+   * Chrome layout. `"compact"` renders the slim chat-bar — a single growable
+   * row of `[ + ] [ editor ] [ voice · send ]`. `"full"` renders the classic
+   * layout and defers to `multiline` for stacked-vs-inline. Mirrors
+   * `ComposerProps.variant`.
+   */
+  variant: "compact" | "full";
+  /**
    * `false` switches the shell into the inline / single-line layout
    * described above. Mirrors `ComposerProps.multiline`.
    */
   multiline: boolean;
+  /**
+   * Compact variant only: when `true` the bar reflows from a single row into
+   * the stacked ChatGPT-style layout — editor on top, actions in a footer row
+   * below (`+` at the start, voice·send at the end). Driven by whether the
+   * editor currently holds more than one line.
+   */
+  expanded?: boolean;
   /** Rendered above the editor (attachment tray). */
   header?: ReactNode;
   /** Toolbar contents — rendered below the editor (multiline) or to its
@@ -61,7 +75,9 @@ interface EditorShellProps {
 export function EditorShell({
   placeholder,
   mode,
+  variant,
   multiline,
+  expanded,
   header,
   toolbar,
   sendButton,
@@ -69,15 +85,25 @@ export function EditorShell({
 }: EditorShellProps) {
   const { classNames, sx, dir } = useComposerContext();
   const isMarkdown = mode === "markdown";
+  const isCompact = variant === "compact";
+  // Compact, single-line resting state: the editor is the flex child filling
+  // the middle of a horizontal row. Once expanded (multi-line) the editor goes
+  // full-width on its own line, so it must NOT be a flex child then.
+  const compactInline = isCompact && !expanded;
+  // The inline (multiline === false) layout also fills the editor into a row.
+  const fillEditor = compactInline || (!isCompact && !multiline);
 
   // Editor padding differs per layout:
+  //   compact:   tight vertical padding; the row grows as lines are added.
   //   multiline: roomy vertical padding for multi-line writing.
   //   inline:    no vertical padding (height drives the size); horizontal
   //              padding hugs the editor between toolbar and send so the
   //              caret never bumps into them.
-  const editorClass = multiline
-    ? "composer-editor composer-editor--multiline"
-    : "composer-editor composer-editor--inline";
+  const editorClass = isCompact
+    ? "composer-editor composer-editor--compact"
+    : multiline
+      ? "composer-editor composer-editor--multiline"
+      : "composer-editor composer-editor--inline";
 
   const editor = slotProps("editor", editorClass, classNames, sx);
 
@@ -86,9 +112,11 @@ export function EditorShell({
   // also gets `leading-9` (1.75rem) to vertically center within the 36px row.
   const editorResolved = resolveSx(sx?.editor);
   const placeholderBase = mirrorEditorPadding(editorResolved);
-  const placeholderClass = multiline
-    ? "composer-placeholder composer-placeholder--multiline"
-    : "composer-placeholder composer-placeholder--inline";
+  const placeholderClass = isCompact
+    ? "composer-placeholder composer-placeholder--compact"
+    : multiline
+      ? "composer-placeholder composer-placeholder--multiline"
+      : "composer-placeholder composer-placeholder--inline";
   const placeholderProps = slotProps(
     "placeholder",
     placeholderClass,
@@ -110,8 +138,9 @@ export function EditorShell({
     <div
       className={cn(
         "composer-editor-block",
-        // Inline: the editor block is the flex child that fills the row.
-        !multiline && "composer-editor-block--inline",
+        // Inline + compact: the editor block is the flex child that fills the
+        // row between the leading actions and the trailing send cluster.
+        fillEditor && "composer-editor-block--inline",
       )}
     >
       {isMarkdown ? (
@@ -130,10 +159,55 @@ export function EditorShell({
     </div>
   );
 
+  if (isCompact) {
+    const actions = toolbar && (
+      <div className="composer-compact-actions">{toolbar}</div>
+    );
+    const sendCluster = sendButton && (
+      <div className="composer-compact-send">{sendButton}</div>
+    );
+
+    // Expanded (multi-line) — ChatGPT-style: the editor takes the top, full
+    // width, and the actions drop into a footer row beneath it (`+` at the
+    // start, voice·send at the end).
+    if (expanded) {
+      return (
+        <>
+          {header}
+          {editorBlock}
+          {(actions || sendCluster) && (
+            <div className="composer-compact-footer">
+              {actions ?? <span />}
+              {sendCluster}
+            </div>
+          )}
+          <HistoryPlugin />
+          {footer}
+        </>
+      );
+    }
+
+    // Resting (single line) — one horizontal row: the "+" quick-actions
+    // trigger, the editor filling the middle, and the trailing voice·send
+    // cluster. Buttons bottom-align so they stay pinned to the last line.
+    return (
+      <>
+        {header}
+        <div className="composer-compact-row">
+          {actions}
+          {editorBlock}
+          {sendCluster}
+        </div>
+        <HistoryPlugin />
+        {footer}
+      </>
+    );
+  }
+
   if (!multiline) {
     // Inline layout — header above, then a single horizontal row of
     // [toolbar | editor | send]. We don't render `footer` here because the
-    // caller already opts out of <MermaidSlot /> when multiline is false
+    // caller already opts out of the mermaid preview when multiline is false
     // (no newlines means no fences can ever form).
     return (
       <>

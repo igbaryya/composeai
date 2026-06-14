@@ -72,6 +72,8 @@ export interface DemoSpec {
   features?: ComposerFeatures;
   /** Editor mode. Defaults to "markdown" when omitted. */
   mode?: ComposerProps["mode"];
+  /** See `ComposerProps.variant`. Defaults to "compact" when omitted. */
+  variant?: ComposerProps["variant"];
   /** See `ComposerProps.multiline`. */
   multiline?: ComposerProps["multiline"];
   /** See `ComposerProps.submitOnEnter`. */
@@ -432,6 +434,87 @@ export function MyComposer() {
         mermaid: false,
       }}
       hint="Minimum viable composer"
+    />
+  );
+}
+`,
+  },
+
+  {
+    id: "compact",
+    title: "Compact (default)",
+    group: "Foundations",
+    icon: <Minus className="h-4 w-4" />,
+    tagline: "Single-line chat-bar that grows on Shift+Enter",
+    description: (
+      <>
+        The default layout (<code>variant="compact"</code>). At rest it reads
+        as a single line: <strong>+</strong> on the left, editor in the middle,
+        voice mic and Send on the right. Press <kbd>Enter</kbd> /{" "}
+        <kbd>Shift</kbd>+<kbd>Enter</kbd> and it reflows ChatGPT-style — the
+        editor jumps to its own full-width line and the actions drop into a
+        footer row beneath it. The quick actions (attach, image, web, and any
+        <code>toolbarExtras</code>) live behind the <strong>+</strong> popover;
+        only the voice mic floats beside Send.
+      </>
+    ),
+    tryIt: [
+      "Press Shift+Enter — the bar reflows: editor on top, + and voice·Send drop into a footer row.",
+      "Delete back to one line — it collapses to the single-row resting state.",
+      "Click the + button — attach, image, and web collapse into the popover; the mic stays by Send.",
+    ],
+    features: { mermaid: false },
+    placeholder: "Message…",
+    code: `import { Composer } from "composeai";
+import "composeai/composer.css";
+
+export function CompactComposer() {
+  return (
+    <Composer
+      // variant="compact" is the default — shown here for clarity.
+      variant="compact"
+      placeholder="Message…"
+      onSend={(payload) => console.log(payload)}
+      features={{ attachments: true, voice: true, web: true }}
+    />
+  );
+}
+`,
+  },
+
+  {
+    id: "full-layout",
+    title: "Classic (full)",
+    group: "Foundations",
+    icon: <Layers className="h-4 w-4" />,
+    tagline: "Roomy editor with a full toolbar row",
+    description: (
+      <>
+        Opt into <code>variant="full"</code> for the classic layout: a roomy
+        multi-line editor area with every action button laid out in a toolbar
+        row above the Send button — no <strong>+</strong> popover, voice stays
+        inline. Honours <code>multiline</code> exactly as before (set{" "}
+        <code>multiline=&#123;false&#125;</code> to collapse it to the inline
+        pill bar).
+      </>
+    ),
+    tryIt: [
+      "Compare with the Compact demo — here the toolbar buttons are all visible at once.",
+      "Type a few lines — the editor area expands vertically with the toolbar pinned below.",
+    ],
+    variant: "full",
+    features: { mermaid: false },
+    placeholder: "Write a message…",
+    code: `import { Composer } from "composeai";
+import "composeai/composer.css";
+
+export function FullComposer() {
+  return (
+    <Composer
+      variant="full"
+      placeholder="Write a message…"
+      onSend={(payload) => console.log(payload)}
+      features={{ attachments: true, voice: true, web: true }}
     />
   );
 }
@@ -1423,11 +1506,13 @@ export function GhostedAutoCompleteStrict() {
     tagline: "Live preview of ```mermaid fences",
     description: (
       <>
-        Open a ``` <code>mermaid</code> fence and the renderer lights up the
-        preview tile below. The mermaid library is dynamic-imported on first
-        sighting so it never ships in the baseline bundle. Markdown styling
-        still works around the fence — type <code>**bold**</code> and you
-        see Slack-style bold while the mermaid source stays put.
+        Open a ``` <code>mermaid</code> fence and a sparkle button appears
+        beside the <strong>+</strong> — press it to pop the rendered diagram
+        open (the compact bar stays uncluttered until you ask for the preview).
+        The mermaid library is dynamic-imported on first sighting so it never
+        ships in the baseline bundle. Markdown styling still works around the
+        fence — type <code>**bold**</code> and you see Slack-style bold while
+        the mermaid source stays put.
       </>
     ),
     prerequisites: [
@@ -1449,11 +1534,13 @@ export function GhostedAutoCompleteStrict() {
       </>,
     ],
     tryIt: [
+      "Press the sparkle button beside the + to pop the diagram preview open.",
       "Edit the seeded diagram and watch the SVG re-render.",
       "Below the fence, type **bold** — markers stay, ‘bold’ goes bold.",
       "Click the tile to open the lightbox.",
     ],
     features: { ...offAll, mermaid: true },
+    variant: "compact",
     placeholder: "Try ```mermaid …",
     initialValue:
       "```mermaid\nflowchart LR\n  Idea --> Draft\n  Draft --> Review\n  Review --> Ship\n```",
@@ -1517,6 +1604,7 @@ export function MermaidComposer() {
       "Submit and inspect the payload — the mermaid source is still there.",
     ],
     features: { ...offAll, mermaid: { keepSource: false } },
+    variant: "full",
     placeholder: "The mermaid fence above is hidden…",
     initialValue:
       "```mermaid\nflowchart LR\n  Plan --> Build --> Ship\n```\n\nAdd a note next to the diagram and submit.",
@@ -1828,62 +1916,56 @@ export function ImperativeComposer() {
   // — Submit behavior
   {
     id: "smart-newline",
-    title: "Smart newline",
+    title: "List continuation",
     group: "Submit behavior",
     icon: <CornerDownLeft className="h-4 w-4" />,
-    tagline: "Enter is context-aware — newline, list, or send",
+    tagline: "Enter sends; lists & code keep their structural Enter",
     description: (
       <>
-        With <code>smartNewline</code> on (the default), <kbd>Enter</kbd>{" "}
-        adapts to whatever you're typing:
+        <kbd>Enter</kbd> sends — always, whether the draft is one line or
+        twenty. <kbd>Shift + Enter</kbd> is the newline gesture for prose.
+        The only places plain <kbd>Enter</kbd> inserts a line instead of
+        sending are the structural ones:
         <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-foreground/80">
           <li>
-            <b>Single line of prose</b> — <kbd>Enter</kbd> sends, the same as
-            any chat input.
-          </li>
-          <li>
-            <b>Already multi-line</b> — <kbd>Enter</kbd> inserts a newline;{" "}
-            <kbd>⌘/Ctrl + Enter</kbd> is the send gesture, so longer drafts
-            survive a stray keystroke.
-          </li>
-          <li>
             <b>Inside a markdown list</b> (<code>- </code>, <code>* </code>,{" "}
-            <code>+ </code>, or <code>1. </code>) — <kbd>Enter</kbd> continues
-            the list with the next marker (numbers auto-increment), and{" "}
-            <kbd>Enter</kbd> on an empty item exits the list back to plain
-            text.
+            <code>+ </code>, or <code>1. </code>) — with{" "}
+            <code>smartNewline</code> on (the default), <kbd>Enter</kbd>{" "}
+            continues the list with the next marker (numbers auto-increment),
+            and <kbd>Enter</kbd> on an empty item exits the list. The next
+            <kbd>Enter</kbd> on that plain line sends.
+          </li>
+          <li>
+            <b>Inside a code fence</b> (<code>```</code>) — <kbd>Enter</kbd>{" "}
+            adds another code line.
           </li>
         </ul>
       </>
     ),
     tryIt: [
-      "Type a single line and press Enter — it sends.",
-      "Type some text, press Shift+Enter, then Enter — Enter inserts another newline (no send).",
+      "Type a few lines with Shift+Enter, then press Enter — it sends (no more getting stuck on Cmd+Enter).",
       'Start a line with "- " and a few words, press Enter — a new bullet appears. Press Enter on the empty bullet — the list ends.',
       'Start a line with "1. " and a few items, press Enter — the next number auto-increments.',
-      "From any multi-line state, press ⌘/Ctrl + Enter to send.",
+      "Open a ``` fence and press Enter — you get a new code line, not a send.",
     ],
     features: offAll,
-    placeholder: 'Try "- " or "1. ", or hit Shift+Enter then Enter…',
+    placeholder: 'Enter sends · Shift+Enter for a newline · try "- " or "1. "…',
     smartNewline: true,
     code: `import { Composer } from "composeai";
 import "composeai/composer.css";
 
-// Defaults shown for clarity — all three already default to true.
-//
-// With smartNewline on, Enter changes meaning based on context:
-//   • single line  → sends
-//   • multi-line   → inserts a newline (⌘/Ctrl+Enter sends)
-//   • in a list    → continues the list, or exits on an empty item
-export function SmartNewlineComposer() {
+// Enter always sends; Shift+Enter adds a newline. smartNewline (default true)
+// only affects markdown lists: Enter continues the list, and Enter on an
+// empty item exits it. Code fences keep their own "Enter = new code line".
+export function ListContinuationComposer() {
   return (
     <Composer
-      placeholder='Try "- " or "1. ", or hit Shift+Enter then Enter…'
+      placeholder='Enter sends · Shift+Enter for newline · try "- " or "1. "…'
       onSend={(payload) => console.log(payload.text)}
       multiline
       submitOnEnter
       smartNewline
-      hint="Enter is context-aware — newline, list, or send"
+      hint="Enter sends; lists & code keep their structural Enter"
     />
   );
 }

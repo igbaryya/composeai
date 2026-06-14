@@ -241,6 +241,7 @@ export function App() {
                   hint={resolveDemoHint(demo)}
                   toolbarExtras={demo.toolbarExtras}
                   mode={demo.mode}
+                  variant={demo.variant}
                   multiline={demo.multiline}
                   submitOnEnter={demo.submitOnEnter}
                   smartNewline={demo.smartNewline}

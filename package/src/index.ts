@@ -32,6 +32,8 @@ export type {
   ComposerSxMap,
   ComposerSxValue,
   ComposerTokens,
+  CustomAction,
+  CustomActionContext,
   DiagramRenderer,
   GhostedAutoCompleteConfig,
   IconComponent,

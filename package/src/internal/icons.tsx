@@ -61,6 +61,14 @@ export const IconAttach = makeIcon(
   </>,
 );
 
+export const IconPlus = makeIcon(
+  "IconPlus",
+  <>
+    <path d="M12 5v14" />
+    <path d="M5 12h14" />
+  </>,
+);
+
 export const IconImage = makeIcon(
   "IconImage",
   <>
@@ -168,6 +176,8 @@ export interface ComposerIcons {
   stop: IconComponent;
   /** Toolbar: attach any file. */
   attach: IconComponent;
+  /** Compact variant: the "+" trigger that opens the quick-actions popover. */
+  plus: IconComponent;
   /** Toolbar: pick an image. */
   image: IconComponent;
   /** Voice plugin: start recording. */
@@ -196,6 +206,7 @@ export const DEFAULT_ICONS: ComposerIcons = {
   send: IconSend,
   stop: IconStop,
   attach: IconAttach,
+  plus: IconPlus,
   image: IconImage,
   voice: IconVoice,
   voiceRecording: IconVoiceRecording,

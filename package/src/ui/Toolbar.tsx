@@ -5,14 +5,36 @@ import { Tooltip } from "../internal/Tooltip";
 import { useComposerContext } from "../core/ComposerProvider";
 import { VoiceButton } from "../plugins/VoicePlugin";
 import { AttachmentTypePicker } from "./AttachmentTypePicker";
+import { QuickActionsMenu } from "./QuickActionsMenu";
+import { CustomActionButtons } from "./CustomActions";
+import { MermaidQuickAction } from "../plugins/MermaidPlugin";
 
 interface Props {
   extras?: ReactNode;
+  variant?: "compact" | "full";
+  /** Real submit pipeline — handed to custom actions via their context. */
+  submit?: () => void;
 }
 
 const TOOLBAR_BTN_BASE = "composer-toolbar-btn";
 
-export function Toolbar({ extras }: Props) {
+export function Toolbar({ extras, variant = "full", submit }: Props) {
+  // Compact variant: the quick actions collapse into the "+" popover and the
+  // voice button floats beside Send (rendered by Composer), so the toolbar
+  // slot is just the "+" trigger — plus, beside it, a diagram-preview trigger
+  // that appears only once a ```mermaid fence is detected.
+  if (variant === "compact") {
+    return (
+      <>
+        <QuickActionsMenu extras={extras} submit={submit} />
+        <MermaidQuickAction />
+      </>
+    );
+  }
+  return <FullToolbar extras={extras} submit={submit} />;
+}
+
+function FullToolbar({ extras, submit }: Props) {
   const {
     features,
     attachmentsConfig,
@@ -119,6 +141,7 @@ export function Toolbar({ extras }: Props) {
           Web
         </button>
       )}
+      <CustomActionButtons submit={submit ?? (() => {})} />
       {extras}
     </div>
   );

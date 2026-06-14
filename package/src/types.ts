@@ -521,6 +521,63 @@ export interface GhostedAutoCompleteConfig {
   minLength?: number;
 }
 
+/**
+ * Editor helpers handed to a {@link CustomAction} when it's clicked, so a
+ * custom toolbar button can mutate the composer the same way a slash command
+ * can. All three are safe to call outside any Lexical update scope — they wrap
+ * `editor.update(...)` internally.
+ */
+export interface CustomActionContext {
+  /** Insert plain text at the current selection. */
+  insertText: (text: string) => void;
+  /**
+   * Insert markdown at the current selection. Multi-line aware: each newline
+   * becomes a real paragraph break so fences / lists / headings form.
+   */
+  insertMarkdown: (markdown: string) => void;
+  /** Submit the composer immediately (same pipeline as the Send button). */
+  submit: () => void;
+}
+
+/**
+ * A consumer-defined toolbar action. Renders as a button in the `full`
+ * variant's toolbar and as a row in the compact variant's "+" popover, placed
+ * between the built-in actions and `toolbarExtras`.
+ *
+ * @example
+ * ```tsx
+ * features={{
+ *   custom: [
+ *     {
+ *       title: "Insert template",
+ *       icon: <FileIcon />,
+ *       onClick: ({ insertMarkdown }) => insertMarkdown("## Summary\n- "),
+ *     },
+ *     {
+ *       title: "Formal tone",
+ *       icon: <WandIcon />,
+ *       active: tone === "formal",
+ *       onClick: () => setTone((t) => (t === "formal" ? "neutral" : "formal")),
+ *     },
+ *   ],
+ * }}
+ * ```
+ */
+export interface CustomAction {
+  /** Stable identifier (React key). Falls back to the array index if omitted. */
+  id?: string;
+  /** Tooltip text and accessible label for the control. */
+  title: string;
+  /** Leading icon — the toolbar button glyph / the menu-row icon. */
+  icon: ReactNode;
+  /** Click handler. Receives editor helpers ({@link CustomActionContext}). */
+  onClick: (ctx: CustomActionContext) => void;
+  /** Render in a pressed / highlighted state — for toggle-style actions. */
+  active?: boolean;
+  /** Disable the control (greyed out, not clickable). */
+  disabled?: boolean;
+}
+
 export interface ComposerFeatures {
   /** `true` (default) → hybrid mode. Pass a {@link MarkdownConfig} to opt
    *  into `"live"` (Notion-style) or otherwise customise behaviour. */
@@ -552,6 +609,15 @@ export interface ComposerFeatures {
   voice?: boolean;
   mermaid?: boolean | MermaidConfig;
   web?: boolean;
+  /**
+   * Consumer-defined toolbar actions. Each entry ({@link CustomAction})
+   * renders as a button in the `full` variant's toolbar and as a row in the
+   * compact variant's "+" popover, between the built-in actions and
+   * `toolbarExtras`. The click handler receives editor helpers
+   * ({@link CustomActionContext}) so it can insert text/markdown or submit.
+   * Defaults to `[]` (no custom actions).
+   */
+  custom?: CustomAction[];
   /**
    * Inline ghost-text autocomplete suggested from a list. Accepts a plain
    * `string[]` shorthand or a {@link GhostedAutoCompleteConfig} for
@@ -743,6 +809,27 @@ export interface ComposerProps {
    * `mode` and work in both.
    */
   mode?: "markdown" | "text";
+  /**
+   * Visual layout of the composer card.
+   *
+   *   - `"compact"` (default): a slim chat-bar that reads as a single line
+   *     and grows as the user types or presses **Shift+Enter**. The quick
+   *     actions that would otherwise sit in the toolbar (attach, image, web,
+   *     and any `toolbarExtras`) collapse behind a single **"+"** button that
+   *     opens a popover; the voice button floats to the right, beside Send.
+   *     This keeps the resting state to one tidy row while still exposing
+   *     everything one tap away.
+   *
+   *   - `"full"`: the classic layout — a multi-line editor area with a full
+   *     toolbar row (all action buttons visible) above the Send button.
+   *     Honours `multiline` exactly as before (`multiline: false` collapses
+   *     it to the inline single-row bar).
+   *
+   * Independent of `multiline`: `variant` controls the *chrome layout*, while
+   * `multiline` controls whether newlines are allowed. The compact variant
+   * defaults to `multiline: true` so Shift+Enter can grow it.
+   */
+  variant?: "compact" | "full";
   /** Toggle / configure built-in plugins. */
   features?: ComposerFeatures;
   /** Extra controls rendered after the built-in toolbar buttons. */
@@ -769,24 +856,24 @@ export interface ComposerProps {
    */
   submitOnEnter?: boolean;
   /**
-   * Smart "context-aware" Enter behavior. Defaults to `true`. Only takes
-   * effect when `multiline` is `true`.
+   * Smart list continuation on Enter. Defaults to `true`. Only takes
+   * effect in markdown mode when `multiline` is `true`.
    *
-   *   - While the editor holds a single line, Enter submits as usual
-   *     (subject to `submitOnEnter`).
-   *   - As soon as the editor contains more than one line, Enter inserts
-   *     a newline instead of submitting, and the user must press
-   *     Cmd/Ctrl+Enter (or click Send) to submit. This prevents
-   *     accidental sends while composing longer messages.
-   *   - In markdown mode, when the cursor sits inside a list paragraph
-   *     (`- `, `* `, `+ `, or `N. `), Enter continues the list with the
-   *     next marker (bullet character preserved, numbers
-   *     auto-incremented). Pressing Enter on an empty list item exits
-   *     the list — the marker is cleared and the cursor stays on the
-   *     now-plain line.
+   * When the cursor sits inside a list paragraph (`- `, `* `, `+ `, or
+   * `N. `), Enter continues the list with the next marker (bullet
+   * character preserved, numbers auto-incremented). Pressing Enter on an
+   * empty list item exits the list — the marker is cleared and the cursor
+   * stays on the now-plain line, where the next Enter sends.
    *
-   * Set to `false` to keep Enter's behavior fixed regardless of how many
-   * lines the user has typed or whether they're inside a list.
+   * This is the ONLY case where plain Enter inserts a line rather than
+   * submitting. Everywhere else Enter sends (subject to `submitOnEnter`)
+   * regardless of how many lines the draft already holds, and Shift+Enter
+   * is the newline gesture. Set to `false` to disable list continuation so
+   * Enter inside a bullet sends like anywhere else.
+   *
+   * NOTE: earlier versions also blocked Enter from submitting once the
+   * editor held more than one line (forcing Cmd/Ctrl+Enter). That rule was
+   * removed — Enter now sends whether the draft is one line or many.
    */
   smartNewline?: boolean;
   /**

@@ -73,6 +73,8 @@ interface ComposerContextValue {
    */
   markdownMode: MarkdownMode;
   mode: ComposerMode;
+  /** See `ComposerProps.variant`. Defaults to `"compact"`. */
+  variant: "compact" | "full";
   /** See `ComposerProps.multiline`. */
   multiline: boolean;
   /** See `ComposerProps.submitOnEnter`. */
@@ -120,6 +122,8 @@ const DEFAULT_FEATURES: Required<ComposerFeatures> = {
   voice: true,
   mermaid: true,
   web: true,
+  // No consumer-defined actions by default.
+  custom: [],
   // Off by default — ghost autocomplete is an opt-in input affordance that
   // only makes sense when the consumer has a curated list of completions.
   ghostedAutoComplete: false,
@@ -153,6 +157,7 @@ function normalizeFeatures(features?: ComposerFeatures): Required<ComposerFeatur
     voice: features.voice ?? DEFAULT_FEATURES.voice,
     mermaid: features.mermaid ?? DEFAULT_FEATURES.mermaid,
     web: features.web ?? DEFAULT_FEATURES.web,
+    custom: features.custom ?? DEFAULT_FEATURES.custom,
     ghostedAutoComplete:
       features.ghostedAutoComplete ?? DEFAULT_FEATURES.ghostedAutoComplete,
   };
@@ -175,6 +180,7 @@ interface ProviderProps {
   closeMenusOnOutsideClick?: boolean;
   attachmentOptions?: AttachmentOptions;
   mode?: ComposerMode;
+  variant?: "compact" | "full";
   multiline?: boolean;
   submitOnEnter?: boolean;
   smartNewline?: boolean;
@@ -195,6 +201,7 @@ export function ComposerProvider({
   closeMenusOnOutsideClick = true,
   attachmentOptions,
   mode = "markdown",
+  variant = "compact",
   multiline = true,
   submitOnEnter = true,
   smartNewline = true,
@@ -423,6 +430,7 @@ export function ComposerProvider({
       attachmentOptions: normalizedAttachmentOptions,
       markdownMode,
       mode,
+      variant,
       multiline,
       submitOnEnter,
       smartNewline,
@@ -455,6 +463,7 @@ export function ComposerProvider({
       normalizedAttachmentOptions,
       markdownMode,
       mode,
+      variant,
       multiline,
       submitOnEnter,
       smartNewline,

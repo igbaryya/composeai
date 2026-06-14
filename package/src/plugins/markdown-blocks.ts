@@ -170,13 +170,23 @@ export function $computeBlockMap(): Map<string, BlockInfo> {
   const map = new Map<string, BlockInfo>();
   const root = $getRoot();
   let insideCode = false;
+  let codeLang: string | undefined;
 
   for (const child of root.getChildren()) {
     if (!$isParagraphNode(child)) continue;
-    const info = $resolveBlockFor(child, insideCode);
+    let info = $resolveBlockFor(child, insideCode);
+    if (info.kind === "code-fence-open") {
+      insideCode = true;
+      codeLang = info.lang;
+    } else if (info.kind === "code-fence-close") {
+      insideCode = false;
+      codeLang = undefined;
+    } else if (info.kind === "code-line" && codeLang) {
+      // Carry the open fence's language onto each body line so syntax
+      // highlighting (e.g. mermaid) knows what it's looking at.
+      info = { ...info, lang: codeLang };
+    }
     map.set(child.getKey(), info);
-    if (info.kind === "code-fence-open") insideCode = true;
-    else if (info.kind === "code-fence-close") insideCode = false;
   }
   return map;
 }
