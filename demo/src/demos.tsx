@@ -93,6 +93,8 @@ export interface DemoSpec {
   /** See `ComposerProps.dir`. */
   dir?: ComposerProps["dir"];
   placeholder?: string;
+  /** See `ComposerProps.animatedPlaceholder`. */
+  animatedPlaceholder?: ComposerProps["animatedPlaceholder"];
   initialValue?: string;
   /** Quick-prompts forwarded to <Composer />. */
   prompts?: ComposerPromptsConfig;
@@ -436,6 +438,65 @@ export function MyComposer() {
       hint="Minimum viable composer"
     />
   );
+}
+`,
+  },
+
+  {
+    id: "animated-placeholder",
+    title: "Animated placeholder",
+    group: "Foundations",
+    icon: <TypeIcon className="h-4 w-4" />,
+    tagline: "Typewriter prompts that play while the editor is empty",
+    description: (
+      <>
+        Pass <code>animatedPlaceholder</code> a list of phrases and the empty
+        editor types through them with a typewriter effect — each is revealed
+        token by token, held, erased, and the next begins, with a blinking
+        caret. By default (<code>loop: false</code>) it plays through once and
+        then settles: on the <code>placeholder</code> prop if you gave one (as
+        here), otherwise on the last phrase. Pass{" "}
+        <code>{`{ phrases, loop: true }`}</code> to cycle forever. It only runs
+        while the editor is empty — typing pauses it — and honours{" "}
+        <code>prefers-reduced-motion</code> by showing the first phrase
+        statically.
+      </>
+    ),
+    tryIt: [
+      "Watch it type each suggestion, then settle on the placeholder once the list is done.",
+      "Start typing — the animation pauses and the placeholder disappears.",
+      "Clear the editor — the typewriter replays from the top.",
+    ],
+    features: offAll,
+    placeholder: "Ask me anything…",
+    animatedPlaceholder: [
+      "Summarize this thread",
+      "Draft a reply to Alex",
+      "Explain this code",
+      "Brainstorm three ideas",
+    ],
+    code: `import { Composer } from "composeai";
+import "composeai/composer.css";
+
+export function AnimatedPlaceholderComposer() {
+  return (
+    <Composer
+      // Types token-by-token through each phrase while the editor is empty.
+      // loop defaults to false → plays once, then settles on \`placeholder\`
+      // below (or the last phrase if no placeholder is given).
+      animatedPlaceholder={[
+        "Summarize this thread",
+        "Draft a reply to Alex",
+        "Explain this code",
+        "Brainstorm three ideas",
+      ]}
+      placeholder="Ask me anything…"
+      onSend={(payload) => console.log(payload)}
+    />
+  );
+
+  // To cycle forever instead, use the object form:
+  //   animatedPlaceholder={{ phrases: [...], loop: true }}
 }
 `,
   },

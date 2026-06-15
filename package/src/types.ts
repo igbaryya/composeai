@@ -522,6 +522,21 @@ export interface GhostedAutoCompleteConfig {
 }
 
 /**
+ * Object form of {@link ComposerProps.animatedPlaceholder}. Use it when you
+ * need to opt into looping; the bare `string[]` form is equivalent to
+ * `{ phrases, loop: false }`.
+ */
+export interface AnimatedPlaceholderConfig {
+  /** Phrases the empty editor types out, in order. */
+  phrases: string[];
+  /**
+   * Cycle the list forever. Defaults to `false` — the list plays through once
+   * and then settles (see {@link ComposerProps.animatedPlaceholder}).
+   */
+  loop?: boolean;
+}
+
+/**
  * Editor helpers handed to a {@link CustomAction} when it's clicked, so a
  * custom toolbar button can mutate the composer the same way a slash command
  * can. All three are safe to call outside any Lexical update scope — they wrap
@@ -745,6 +760,46 @@ export interface ComposerProps {
    */
   focusShortcut?: string | false | null;
   placeholder?: string;
+  /**
+   * Animated placeholder: a list of phrases the empty editor cycles through
+   * with a typewriter effect — each phrase is revealed one character at a
+   * time, held, erased, and the next begins. The animation takes precedence
+   * over the static {@link placeholder} while the editor is empty and pauses
+   * the moment the user starts typing.
+   *
+   * Pass a `string[]` for the default behaviour, or an
+   * {@link AnimatedPlaceholderConfig} to enable looping.
+   *
+   * **Looping** (`loop`, default `false`):
+   * - `loop: false` — play through the list once, then settle: on the
+   *   {@link placeholder} prop if one was given, otherwise on the last phrase
+   *   (left on screen).
+   * - `loop: true` — cycle the list forever.
+   *
+   * Honours `prefers-reduced-motion` by showing the first phrase statically.
+   *
+   * @example
+   * // Play once, then rest on the last phrase (no `placeholder` given):
+   * <Composer
+   *   animatedPlaceholder={[
+   *     "Ask me anything…",
+   *     "Summarize this thread",
+   *     "Draft a reply to Alex",
+   *   ]}
+   *   onSend={...}
+   * />
+   *
+   * @example
+   * // Loop forever:
+   * <Composer
+   *   animatedPlaceholder={{
+   *     phrases: ["Ask me anything…", "Summarize this thread"],
+   *     loop: true,
+   *   }}
+   *   onSend={...}
+   * />
+   */
+  animatedPlaceholder?: string[] | AnimatedPlaceholderConfig;
   /**
    * Shorthand for `classNames.root`. Kept for back-compat; if both are set,
    * the two are merged (`className` first, then `classNames.root`).

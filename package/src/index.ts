@@ -13,6 +13,7 @@ export { SuggestionRow } from "./ui/SuggestionRow";
 export type { SuggestionRowProps } from "./ui/SuggestionRow";
 
 export type {
+  AnimatedPlaceholderConfig,
   Attachment,
   AttachmentKind,
   AttachmentOptions,

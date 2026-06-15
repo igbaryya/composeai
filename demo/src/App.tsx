@@ -235,6 +235,7 @@ export function App() {
                   ref={composerRef}
                   onSend={onSend}
                   placeholder={demo.placeholder ?? "Ask anything…"}
+                  animatedPlaceholder={demo.animatedPlaceholder}
                   autoFocus={demo.autoFocus ?? true}
                   initialValue={demo.initialValue}
                   features={demo.features}

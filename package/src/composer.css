@@ -851,6 +851,37 @@
   text-overflow: ellipsis;
 }
 
+/* Animated (typewriter) placeholder — a blinking caret trails the revealed
+ * text so the empty editor reads as if it's being typed into live. The caret
+ * is a pseudo-element so it never becomes part of the placeholder string. */
+.composer-placeholder--animated::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-inline-start: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  opacity: 0.8;
+  animation: composer-caret-blink 1.1s steps(1, end) infinite;
+}
+@keyframes composer-caret-blink {
+  0%,
+  50% {
+    opacity: 0.8;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-placeholder--animated::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 .composer-inline-row {
   display: flex;
   align-items: center;

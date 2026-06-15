@@ -50,6 +50,7 @@ import { VoiceButton } from "./plugins/VoicePlugin";
 import { HintBar } from "./ui/HintBar";
 import { QuickPrompts } from "./ui/QuickPrompts";
 import { useComposerHandle } from "./hooks/useComposerHandle";
+import { useAnimatedPlaceholder } from "./hooks/useAnimatedPlaceholder";
 import { parseShortcut, matchesShortcut } from "./internal/shortcut";
 import { focusEditor } from "./internal/focusEditor";
 import type { ComposerHandle, ComposerProps, ComposerSubmitPayload } from "./types";
@@ -65,6 +66,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 ) {
   const {
     placeholder = "Send a message…",
+    animatedPlaceholder,
     onSend,
     onStop,
     isStreaming,
@@ -94,6 +96,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     attachmentOptions,
     dir,
   } = props;
+
+  // Whether the consumer explicitly passed a `placeholder` (vs. falling back
+  // to the default). Drives where a non-looping `animatedPlaceholder` settles:
+  // an explicit placeholder is shown at the end, otherwise the last phrase.
+  const hasPlaceholder = props.placeholder != null;
 
   // `color` is a brand-colour shorthand: derive primary/accent/ring from
   // a single value, then layer the consumer's explicit `tokens` on top so
@@ -140,6 +147,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         ) : null}
         <ComposerCard
           placeholder={placeholder}
+          animatedPlaceholder={animatedPlaceholder}
+          hasPlaceholder={hasPlaceholder}
           initialValue={initialValue}
           handleRef={ref}
           onSend={onSend}
@@ -161,6 +170,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
 interface CardProps {
   placeholder: string;
+  animatedPlaceholder?: ComposerProps["animatedPlaceholder"];
+  /** Whether `placeholder` was explicitly supplied (see Composer). */
+  hasPlaceholder: boolean;
   initialValue?: string;
   handleRef: React.ForwardedRef<ComposerHandle>;
   onSend?: ComposerProps["onSend"];
@@ -201,6 +213,8 @@ const PLAIN_NODES: Array<Klass<LexicalNode>> = [MentionNode];
 
 function ComposerCard({
   placeholder,
+  animatedPlaceholder,
+  hasPlaceholder,
   initialValue,
   handleRef,
   onSend,
@@ -264,6 +278,8 @@ function ComposerCard({
       <LexicalComposer initialConfig={initialConfig}>
         <ComposerInner
           placeholder={placeholder}
+          animatedPlaceholder={animatedPlaceholder}
+          hasPlaceholder={hasPlaceholder}
           mode={mode}
           variant={variant}
           multiline={multiline}
@@ -284,6 +300,8 @@ function ComposerCard({
 
 interface InnerProps {
   placeholder: string;
+  animatedPlaceholder?: ComposerProps["animatedPlaceholder"];
+  hasPlaceholder: boolean;
   mode: NonNullable<ComposerProps["mode"]>;
   variant: "compact" | "full";
   multiline: boolean;
@@ -300,6 +318,8 @@ interface InnerProps {
 
 function ComposerInner({
   placeholder,
+  animatedPlaceholder,
+  hasPlaceholder,
   mode,
   variant,
   multiline,
@@ -487,6 +507,22 @@ function ComposerInner({
   }, [editor, registerRunPrompt, submit]);
 
   const isCompact = variant === "compact";
+  // Typewriter placeholder. Active only while the editor is empty (the
+  // placeholder is hidden otherwise, so there's nothing to animate and no
+  // reason to keep a timer running). When it isn't running we fall back to the
+  // static `placeholder`. A non-looping run settles on the explicit
+  // `placeholder` if the consumer gave one, otherwise on the last phrase.
+  const animatedPhrases = Array.isArray(animatedPlaceholder)
+    ? animatedPlaceholder
+    : animatedPlaceholder?.phrases;
+  const animatedLoop = Array.isArray(animatedPlaceholder)
+    ? false
+    : !!animatedPlaceholder?.loop;
+  const animatedFrame = useAnimatedPlaceholder(animatedPhrases, !hasText, {
+    loop: animatedLoop,
+    settleTo: hasPlaceholder ? placeholder : undefined,
+  });
+  const effectivePlaceholder = animatedFrame?.text ?? placeholder;
   // Mermaid previews depend on a ```fence forming, which needs newlines. The
   // inline (`multiline === false`) layout can't form one, so we only run the
   // detector when `multiline` is on and the markdown mermaid feature is enabled.
@@ -524,7 +560,8 @@ function ComposerInner({
   const content = (
     <>
       <EditorShell
-        placeholder={placeholder}
+        placeholder={effectivePlaceholder}
+        animated={animatedFrame?.active ?? false}
         mode={mode}
         variant={variant}
         multiline={multiline}

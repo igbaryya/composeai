@@ -38,6 +38,12 @@ type Mode = NonNullable<ComposerProps["mode"]>;
 
 interface EditorShellProps {
   placeholder: string;
+  /**
+   * `true` when `placeholder` is a frame of the typewriter animation rather
+   * than static text — adds a blinking caret after the text so it reads as
+   * live typing. Mirrors whether `ComposerProps.animatedPlaceholder` is active.
+   */
+  animated?: boolean;
   mode: Mode;
   /**
    * Chrome layout. `"compact"` renders the slim chat-bar — a single growable
@@ -74,6 +80,7 @@ interface EditorShellProps {
 
 export function EditorShell({
   placeholder,
+  animated,
   mode,
   variant,
   multiline,
@@ -112,11 +119,15 @@ export function EditorShell({
   // also gets `leading-9` (1.75rem) to vertically center within the 36px row.
   const editorResolved = resolveSx(sx?.editor);
   const placeholderBase = mirrorEditorPadding(editorResolved);
-  const placeholderClass = isCompact
-    ? "composer-placeholder composer-placeholder--compact"
-    : multiline
-      ? "composer-placeholder composer-placeholder--multiline"
-      : "composer-placeholder composer-placeholder--inline";
+  const placeholderClass = cn(
+    isCompact
+      ? "composer-placeholder composer-placeholder--compact"
+      : multiline
+        ? "composer-placeholder composer-placeholder--multiline"
+        : "composer-placeholder composer-placeholder--inline",
+    // Adds the blinking caret after the typewriter text.
+    animated && "composer-placeholder--animated",
+  );
   const placeholderProps = slotProps(
     "placeholder",
     placeholderClass,
