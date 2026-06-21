@@ -3,7 +3,7 @@
  * text with a `MentionNode` chip on select. The chip is atomic (single
  * backspace removes it) and rendered in the theme primary color.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
@@ -63,14 +63,24 @@ export function MentionPlugin({ config }: Props) {
     allowWhitespace: false,
   });
 
+  // Read `items` through a ref so a consumer that passes a fresh function /
+  // array identity every render (an inline `items={(q) => …}` is the common
+  // case) doesn't retrigger the load effect on every render — which would
+  // setState → re-render → setState forever ("Maximum update depth exceeded").
+  // The effect's only real input is the query string.
+  const itemsRef = useRef(config.items);
+  itemsRef.current = config.items;
+  const isAsync = !isSyncItems(config.items);
+
   useEffect(() => {
-    if (isSyncItems(config.items)) {
+    const items = itemsRef.current;
+    if (isSyncItems(items)) {
       setIsLoading(false);
       return;
     }
     let cancelled = false;
     setIsLoading(true);
-    Promise.resolve(config.items(query)).then((res) => {
+    Promise.resolve(items(query)).then((res) => {
       if (cancelled) return;
       setAsyncItems(res);
       setIsLoading(false);
@@ -78,7 +88,7 @@ export function MentionPlugin({ config }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [query, config.items]);
+  }, [query, isAsync]);
 
   const allItems = useMemo<MentionItem[]>(() => {
     return isSyncItems(config.items) ? config.items : asyncItems ?? [];

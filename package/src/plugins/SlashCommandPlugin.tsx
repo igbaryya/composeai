@@ -6,7 +6,7 @@
  * Built on Lexical's `LexicalTypeaheadMenuPlugin` so we get IME-safe match
  * detection, keyboard navigation, and caret-anchored positioning for free.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   LexicalTypeaheadMenuPlugin,
@@ -60,15 +60,25 @@ export function SlashCommandPlugin({ config, onSubmit }: Props) {
     { minLength: 0, maxLength: 32, allowWhitespace: false },
   );
 
+  // Read `items` through a ref so a consumer that passes a fresh function /
+  // array identity every render (an inline `items={(q) => …}` is the common
+  // case) doesn't retrigger this load effect on every render — which would
+  // setState → re-render → setState forever ("Maximum update depth exceeded").
+  // The effect's only real input is the query string.
+  const itemsRef = useRef(config.items);
+  itemsRef.current = config.items;
+  const isAsync = !isSyncItems(config.items);
+
   // Resolve async items when query changes.
   useEffect(() => {
-    if (isSyncItems(config.items)) {
+    const items = itemsRef.current;
+    if (isSyncItems(items)) {
       setIsLoading(false);
       return;
     }
     let cancelled = false;
     setIsLoading(true);
-    Promise.resolve(config.items(query)).then((res) => {
+    Promise.resolve(items(query)).then((res) => {
       if (cancelled) return;
       setAsyncItems(res);
       setIsLoading(false);
@@ -76,7 +86,7 @@ export function SlashCommandPlugin({ config, onSubmit }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [query, config.items]);
+  }, [query, isAsync]);
 
   const allItems = useMemo<SlashCommand[]>(() => {
     return isSyncItems(config.items) ? config.items : asyncItems ?? [];
