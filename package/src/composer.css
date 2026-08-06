@@ -899,12 +899,27 @@
  * Compact variant layout — the slim chat-bar: a single growable row of
  * [ + ] [ editor ] [ voice · send ]. The "+" and the trailing cluster
  * bottom-align so they stay pinned to the last line as the editor grows.
+ *
+ * Going multi-line (`data-composer-expanded`, set by EditorShell) reflows that
+ * SAME row rather than swapping in a different subtree: it wraps, the editor
+ * claims the whole first line and the controls drop onto a second one. Because
+ * nothing remounts, every part of the change can animate — the editor's well
+ * eases open and the control line unfolds from behind it, so the card grows
+ * into its new shape instead of jumping.
  * ------------------------------------------------------------------------- */
 .composer-compact-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.25rem;
   padding: 0.375rem 0.5rem;
+  transition: padding 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.composer-compact-row[data-composer-expanded] {
+  /* No row gap: the editor's own bottom padding is what separates it from the
+   * control line, so the unfold animation below owns the whole height change. */
+  row-gap: 0;
+  padding: 0.5rem 0.5rem 0.375rem;
 }
 .composer-compact-actions,
 .composer-compact-send {
@@ -919,15 +934,39 @@
    * compact editor's min-height. */
   min-height: 2.25rem;
 }
+/* Holds Send at the end of the wrapped control line even when there is no
+ * leading "+" cluster to push against (every toolbar feature switched off).
+ * In the resting row the editor already absorbs the free space, so it's inert. */
+.composer-compact-send {
+  margin-inline-start: auto;
+}
 
-/* Expanded compact bar — the actions footer beneath the full-width editor.
- * `+` sits at the start, the voice·send cluster at the end. */
-.composer-compact-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem 0.375rem;
+/* Expanded — the editor takes the first line whole, ahead of the "+" cluster
+ * that precedes it in DOM order, and the controls wrap underneath. */
+.composer-compact-row[data-composer-expanded] .composer-editor-block--inline {
+  flex: 1 1 100%;
+  order: -1;
+}
+
+/* The control line unfolds: it starts pulled up by exactly its own height — so
+ * the card is still at its single-line size — then slides down into place.
+ * Animating the margin (rather than a height the browser can't interpolate
+ * from `auto`) is what makes the card grow smoothly. */
+.composer-compact-row[data-composer-expanded] .composer-compact-actions,
+.composer-compact-row[data-composer-expanded] .composer-compact-send {
+  animation: composer-controls-unfold 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes composer-controls-unfold {
+  from {
+    margin-block-start: -2.25rem;
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    margin-block-start: 0;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .composer-editor.composer-editor--compact {
@@ -938,6 +977,14 @@
   line-height: 1.5;
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
+  transition: padding 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* A multi-line draft gets a roomier well. Added to the row's own 8px inset
+ * that puts the text ~20px in from the card edge and ~16px down from the top —
+ * clear of the 28px corner radius, which a single centered line never reaches
+ * but the first line of a full-width draft otherwise runs straight into. */
+[data-composer-expanded] .composer-editor.composer-editor--compact {
+  padding: 0.5rem 0.75rem 0.4375rem;
 }
 .composer-editor--compact::-webkit-scrollbar {
   width: 6px;
@@ -955,6 +1002,22 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Mirrors the expanded editor padding — reachable by emptying a multi-line
+ * draft down to blank paragraphs, where the placeholder comes back. */
+[data-composer-expanded] .composer-placeholder--compact {
+  padding: 0.5rem 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-compact-row,
+  .composer-editor.composer-editor--compact {
+    transition: none;
+  }
+  .composer-compact-row[data-composer-expanded] .composer-compact-actions,
+  .composer-compact-row[data-composer-expanded] .composer-compact-send {
+    animation: none;
+  }
 }
 
 /* Quick-actions ("+") popover. Reuses .composer-attach-menu visuals; the

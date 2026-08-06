@@ -59,9 +59,11 @@ interface EditorShellProps {
   multiline: boolean;
   /**
    * Compact variant only: when `true` the bar reflows from a single row into
-   * the stacked ChatGPT-style layout — editor on top, actions in a footer row
-   * below (`+` at the start, voice·send at the end). Driven by whether the
-   * editor currently holds more than one line.
+   * the stacked ChatGPT-style layout — editor on top, actions on a wrapped
+   * second line below (`+` at the start, voice·send at the end). Driven by
+   * whether the editor currently holds more than one line. The reflow is
+   * expressed purely in CSS (see `data-composer-expanded`); the DOM is the
+   * same in both states.
    */
   expanded?: boolean;
   /** Rendered above the editor (attachment tray). */
@@ -93,12 +95,12 @@ export function EditorShell({
   const { classNames, sx, dir } = useComposerContext();
   const isMarkdown = mode === "markdown";
   const isCompact = variant === "compact";
-  // Compact, single-line resting state: the editor is the flex child filling
-  // the middle of a horizontal row. Once expanded (multi-line) the editor goes
-  // full-width on its own line, so it must NOT be a flex child then.
-  const compactInline = isCompact && !expanded;
-  // The inline (multiline === false) layout also fills the editor into a row.
-  const fillEditor = compactInline || (!isCompact && !multiline);
+  // Both the compact bar and the inline (multiline === false) layout make the
+  // editor the flex child that fills the row. In the compact bar's expanded
+  // state it stays that same flex child and only its basis changes (it claims
+  // a whole line — see the `[data-composer-expanded]` rules), so the class
+  // never flips and the contenteditable is never torn down mid-sentence.
+  const fillEditor = isCompact || !multiline;
 
   // Editor padding differs per layout:
   //   compact:   tight vertical padding; the row grows as lines are added.
@@ -178,33 +180,22 @@ export function EditorShell({
       <div className="composer-compact-send">{sendButton}</div>
     );
 
-    // Expanded (multi-line) — ChatGPT-style: the editor takes the top, full
-    // width, and the actions drop into a footer row beneath it (`+` at the
-    // start, voice·send at the end).
-    if (expanded) {
-      return (
-        <>
-          {header}
-          {editorBlock}
-          {(actions || sendCluster) && (
-            <div className="composer-compact-footer">
-              {actions ?? <span />}
-              {sendCluster}
-            </div>
-          )}
-          <HistoryPlugin />
-          {footer}
-        </>
-      );
-    }
-
-    // Resting (single line) — one horizontal row: the "+" quick-actions
-    // trigger, the editor filling the middle, and the trailing voice·send
-    // cluster. Buttons bottom-align so they stay pinned to the last line.
+    // One row serves both states. Resting (single line) it reads left to
+    // right: the "+" quick-actions trigger, the editor filling the middle,
+    // and the trailing voice·send cluster, all bottom-aligned.
+    //
+    // Expanded (multi-line) the same row wraps — the editor claims the whole
+    // first line and the controls unfold onto a second one, ChatGPT-style.
+    // Doing that in CSS rather than by swapping React subtrees is what lets
+    // the growth animate, and it keeps Lexical's root element mounted while
+    // the user is mid-sentence.
     return (
       <>
         {header}
-        <div className="composer-compact-row">
+        <div
+          className="composer-compact-row"
+          data-composer-expanded={expanded ? "" : undefined}
+        >
           {actions}
           {editorBlock}
           {sendCluster}
