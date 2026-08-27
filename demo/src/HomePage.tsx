@@ -796,6 +796,14 @@ const COMPOSER_PROPS: PropRow[] = [
     description:
       "Lifecycle + submit rules for attachments. `uploadFirst` + async `onUpload(file) => boolean` upload in the background with spinner / warning chip states; `canSendOnlyAttachment` (default true) allows attachment-only messages.",
   },
+  {
+    name: "inContext",
+    type: "ContextItem[] | InContextConfig",
+    optional: true,
+    defaultValue: "—",
+    description:
+      'What\'s in context for the next turn — open files, docs, retrieved sources — rendered as a small chip row and echoed back on `payload.inContext`. `placement: "top"` (default) is a full-width row above the editor; `"bottom"` sits inline in the action band, sharing the row with Send. The list is controlled by you: `onRemove` makes chips dismissible, `onSelect` makes them clickable, and anything past `maxVisible` (default 3) collapses behind a `+N` pill.',
+  },
 
   // ── Editor behavior ──────────────────────────────────────────────────
   {

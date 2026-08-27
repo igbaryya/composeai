@@ -139,6 +139,15 @@ export const IconAudio = makeIcon(
   </>,
 );
 
+export const IconContext = makeIcon(
+  "IconContext",
+  <>
+    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+    <path d="m6.08 10.37-3.5 1.59a1 1 0 0 0 0 1.83l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.6" />
+    <path d="m6.08 15.37-3.5 1.59a1 1 0 0 0 0 1.83l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.6" />
+  </>,
+);
+
 export const IconSparkle = makeIcon(
   "IconSparkle",
   <>
@@ -194,6 +203,8 @@ export interface ComposerIcons {
   file: IconComponent;
   /** Audio attachment. */
   audio: IconComponent;
+  /** Default glyph on an "in context" chip (per-item `icon` wins). */
+  context: IconComponent;
   /** Decorative sparkle (suggestions, diagram preview header). */
   sparkle: IconComponent;
   /** Generic loading spinner (used on attachment chips during upload). */
@@ -215,6 +226,7 @@ export const DEFAULT_ICONS: ComposerIcons = {
   zoom: IconZoom,
   file: IconFile,
   audio: IconAudio,
+  context: IconContext,
   sparkle: IconSparkle,
   spinner: IconSpinner,
   warning: IconWarning,

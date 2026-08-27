@@ -15,6 +15,7 @@ Every feature you'd expect from a production AI chat surface is opt-in behind `f
 - **Attachments** — paste, drag-drop, optional upload pipeline
 - **Voice input** — Web Speech API with MediaRecorder fallback
 - **Streaming UX** — swap Send for Stop while the model is generating
+- **In-context chips** — show the open file / doc / source the turn will carry
 - **Quick prompts**, **Mermaid previews**, **ghost autocomplete**, and full theming
 
 This repository ships the **`composeai` npm library** and a live **[demo gallery](https://igbaryya.github.io/composeai/)** that exercises every capability.
@@ -56,6 +57,7 @@ Or explore the hosted gallery at **[igbaryya.github.io/composeai](https://igbary
 | Voice input                     | Web Speech API with MediaRecorder fallback                                                        |
 | Mermaid diagrams                | `mermaid` is an **optional** peer dep — lazy-imported, or pass `renderDiagram` to skip entirely   |
 | Quick prompts                   | Starter chips above the composer (`sendValue` or `initValue` behaviour)                           |
+| In context                      | `inContext` chip row (top or bottom edge) showing what rides along; echoed on `payload.inContext` |
 | Animated placeholder            | `animatedPlaceholder={["…", "…"]}` types phrases out token-by-token while the editor is empty     |
 | Slots                           | Replace any chrome piece wholesale (currently `sendButton`, `stopButton`) via render-prop slots   |
 | Theming                         | `color` shorthand, full `tokens` map, `classNames` + `sx` per-slot, dark-mode-friendly            |

@@ -18,7 +18,9 @@ import type {
   ComposerSlotClassNames,
   ComposerSlots,
   ComposerSxMap,
+  ContextItem,
   DiagramRenderer,
+  InContextConfig,
   MarkdownMode,
 } from "../types";
 import { resolveIcons, type ComposerIcons } from "../internal/icons";
@@ -59,6 +61,12 @@ interface ComposerContextValue {
   closeMenusOnOutsideClick: boolean;
   /** See {@link AttachmentOptions}. Normalized so all sub-flags have defaults. */
   attachmentOptions: AttachmentOptions;
+  /**
+   * Normalized {@link ComposerProps.inContext} — the array shorthand collapsed
+   * into its config form, and `null` whenever there is nothing to show, so the
+   * tray and the submit pipeline can both branch on a single truthiness check.
+   */
+  inContext: InContextConfig | null;
   /**
    * Resolved markdown rendering mode. Derived from `features.markdown`:
    *   - `markdown: true` / `markdown: undefined` → `"hybrid"`
@@ -163,6 +171,19 @@ function normalizeFeatures(features?: ComposerFeatures): Required<ComposerFeatur
   };
 }
 
+/**
+ * Collapse the `ContextItem[]` shorthand into its config form, and treat an
+ * empty list the same as an absent prop — the tray has nothing to render and
+ * the payload gets an empty array either way.
+ */
+function normalizeInContext(
+  inContext?: ContextItem[] | InContextConfig,
+): InContextConfig | null {
+  if (!inContext) return null;
+  const config = Array.isArray(inContext) ? { items: inContext } : inContext;
+  return config.items.length > 0 ? config : null;
+}
+
 function detectKind(file: File): Attachment["kind"] {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("audio/")) return "audio";
@@ -179,6 +200,7 @@ interface ProviderProps {
   isStreaming?: boolean;
   closeMenusOnOutsideClick?: boolean;
   attachmentOptions?: AttachmentOptions;
+  inContext?: ContextItem[] | InContextConfig;
   mode?: ComposerMode;
   variant?: "compact" | "full";
   multiline?: boolean;
@@ -200,6 +222,7 @@ export function ComposerProvider({
   isStreaming,
   closeMenusOnOutsideClick = true,
   attachmentOptions,
+  inContext,
   mode = "markdown",
   variant = "compact",
   multiline = true,
@@ -232,6 +255,11 @@ export function ComposerProvider({
     }
     return DEFAULT_ATTACHMENTS;
   }, [normalizedFeatures.attachments]);
+
+  const normalizedInContext = useMemo(
+    () => normalizeInContext(inContext),
+    [inContext],
+  );
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [webEnabled, setWebEnabled] = useState(false);
@@ -428,6 +456,7 @@ export function ComposerProvider({
       setIsDraggingFiles,
       closeMenusOnOutsideClick,
       attachmentOptions: normalizedAttachmentOptions,
+      inContext: normalizedInContext,
       markdownMode,
       mode,
       variant,
@@ -461,6 +490,7 @@ export function ComposerProvider({
       isDraggingFiles,
       closeMenusOnOutsideClick,
       normalizedAttachmentOptions,
+      normalizedInContext,
       markdownMode,
       mode,
       variant,

@@ -22,6 +22,8 @@ export type ComposerSlot =
   | "hint"
   | "attachmentTray"
   | "attachmentChip"
+  | "inContextTray"
+  | "inContextChip"
   | "mention"
   | "mentionMenu"
   | "mentionItem"
@@ -258,6 +260,67 @@ export interface SlashCommandContext {
   submit: () => void;
 }
 
+/**
+ * One thing the host has put "in context" for the next turn — the open file,
+ * the selected document, a linked ticket, the retrieved snippet. Unlike an
+ * {@link Attachment} the composer never owns the bytes: the host decides what
+ * is in context, the composer only shows it and hands the list back on submit
+ * via {@link ComposerSubmitPayload.inContext}.
+ */
+export interface ContextItem {
+  /** Stable identifier (React key, and what `onSelect` / `onRemove` echo). */
+  id: string;
+  /** Chip text — a file name, a doc title, an issue key. */
+  label: string;
+  /** Secondary detail; appended to the chip's tooltip (e.g. the full path). */
+  description?: string;
+  /** Leading glyph. Defaults to the `context` entry of the icon set. */
+  icon?: ReactNode;
+}
+
+/**
+ * Object form of {@link ComposerProps.inContext}. The `ContextItem[]`
+ * shorthand is equivalent to `{ items }` — read-only indicator chips.
+ *
+ * The list is **controlled**: the composer holds no copy of it. Removing a
+ * chip fires `onRemove` and nothing else — drop the item from your own state
+ * and the chip disappears on the next render.
+ */
+export interface InContextConfig {
+  /** What's in context, in display order. An empty list hides the row. */
+  items: ContextItem[];
+  /**
+   * Where the chip row sits on the composer card.
+   *
+   *   - `"top"` (default) — a full-width row above the editor, ahead of the
+   *     attachment tray. Reads as "here's the ground you're writing against",
+   *     stays out of the action band's way, and has room for longer labels.
+   *
+   *   - `"bottom"` — inline in the action band, after the toolbar buttons and
+   *     sharing the row with Send. Tighter, and the layout most AI composers
+   *     use. The chips give ground before anything else in that row when it
+   *     runs short of width.
+   */
+  placement?: "top" | "bottom";
+  /**
+   * Click handler for the chip body. When omitted the chips are inert
+   * indicators; when set they render as buttons (e.g. to open the file).
+   */
+  onSelect?: (item: ContextItem) => void;
+  /**
+   * When set, every chip gets a dismiss `×` that calls this. Omit to make
+   * the row read-only.
+   */
+  onRemove?: (item: ContextItem) => void;
+  /**
+   * Chips rendered before the rest collapse behind a `+N` pill the user can
+   * click to expand. Defaults to `3`.
+   */
+  maxVisible?: number;
+  /** Accessible name for the chip row. Defaults to `"In context"`. */
+  label?: string;
+}
+
 export interface ComposerSubmitPayload {
   /** Plain text (chips collapsed to their labels). */
   text: string;
@@ -265,6 +328,12 @@ export interface ComposerSubmitPayload {
   markdown: string;
   attachments: Attachment[];
   mentions: MentionRef[];
+  /**
+   * Snapshot of {@link ComposerProps.inContext} at submit time — exactly what
+   * the user could see riding along with the message. Empty when the prop
+   * isn't used.
+   */
+  inContext: ContextItem[];
 }
 
 export interface MentionConfig {
@@ -1012,6 +1081,33 @@ export interface ComposerProps {
    * ```
    */
   prompts?: ComposerPromptsConfig;
+  /**
+   * What's currently "in context" for the next turn — open files, selected
+   * documents, retrieved sources. Rendered as a compact chip row above the
+   * editor (or inline in the action band — see
+   * {@link InContextConfig.placement}) and echoed back on `onSend`'s
+   * {@link ComposerSubmitPayload.inContext}.
+   *
+   * The list is controlled by the host: the composer never mutates it. Pass a
+   * `ContextItem[]` for read-only indicator chips, or an
+   * {@link InContextConfig} to place the row and make the chips clickable /
+   * dismissible.
+   *
+   * @example
+   * ```tsx
+   * <Composer
+   *   inContext={{
+   *     items: openFiles.map((f) => ({ id: f.path, label: f.name, description: f.path })),
+   *     placement: "top",
+   *     maxVisible: 3,
+   *     onSelect: (item) => openInEditor(item.id),
+   *     onRemove: (item) => setOpenFiles((f) => f.filter((x) => x.path !== item.id)),
+   *   }}
+   *   onSend={({ text, inContext }) => ask(text, { context: inContext })}
+   * />
+   * ```
+   */
+  inContext?: ContextItem[] | InContextConfig;
   /**
    * Attachment lifecycle and submission rules — `uploadFirst` for
    * server-side upload pipelines (spinner + warning chip states),

@@ -11,14 +11,14 @@
  * Two layouts are supported, picked via `multiline`:
  *
  *   ┌───────────────────────── multiline (default) ─────────────────────────┐
- *   │ header (attachment tray)                                              │
+ *   │ header (top-placed in-context row, attachment tray)                   │
  *   │ editor (multi-line, max-h, vertical scroll)                           │
- *   │ toolbar ─────────────────────────────────────────────────── send btn  │
+ *   │ toolbar + bottom-placed in-context row ──────────────────── send btn  │
  *   │ footer (mermaid preview)                                              │
  *   └───────────────────────────────────────────────────────────────────────┘
  *
  *   ┌─────────────────────── multiline === false (inline) ──────────────────┐
- *   │ header (attachment tray)                                              │
+ *   │ header (top-placed in-context row, attachment tray)                   │
  *   │ toolbar │ editor (single-line, horizontal scroll)        │ send btn   │
  *   │ footer (NOT rendered — mermaid can't form without newlines anyway)    │
  *   └───────────────────────────────────────────────────────────────────────┘
@@ -66,7 +66,7 @@ interface EditorShellProps {
    * same in both states.
    */
   expanded?: boolean;
-  /** Rendered above the editor (attachment tray). */
+  /** Rendered above the editor (top-placed in-context row, attachment tray). */
   header?: ReactNode;
   /** Toolbar contents — rendered below the editor (multiline) or to its
    *  start (inline). Toolbar omits a wrapping div so we can position it

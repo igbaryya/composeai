@@ -7,6 +7,7 @@ import { VoiceButton } from "../plugins/VoicePlugin";
 import { AttachmentTypePicker } from "./AttachmentTypePicker";
 import { QuickActionsMenu } from "./QuickActionsMenu";
 import { CustomActionButtons } from "./CustomActions";
+import { InContextTray } from "./InContextTray";
 import { MermaidQuickAction } from "../plugins/MermaidPlugin";
 
 interface Props {
@@ -22,12 +23,14 @@ export function Toolbar({ extras, variant = "full", submit }: Props) {
   // Compact variant: the quick actions collapse into the "+" popover and the
   // voice button floats beside Send (rendered by Composer), so the toolbar
   // slot is just the "+" trigger — plus, beside it, a diagram-preview trigger
-  // that appears only once a ```mermaid fence is detected.
+  // that appears only once a ```mermaid fence is detected, and the "in
+  // context" chips when they're placed at the bottom (nothing otherwise).
   if (variant === "compact") {
     return (
       <>
         <QuickActionsMenu extras={extras} submit={submit} />
         <MermaidQuickAction />
+        <InContextTray at="bottom" />
       </>
     );
   }
@@ -143,6 +146,7 @@ function FullToolbar({ extras, submit }: Props) {
       )}
       <CustomActionButtons submit={submit ?? (() => {})} />
       {extras}
+      <InContextTray at="bottom" />
     </div>
   );
 }

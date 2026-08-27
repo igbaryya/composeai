@@ -893,6 +893,12 @@
   display: flex;
   flex: none;
   align-items: center;
+  min-width: 0;
+}
+/* Same rule as the other two layouts: the toolbar only gives ground when it
+ * holds a bottom-placed context tray, and the tray is what absorbs it. */
+.composer-inline-toolbar:has(.composer-context-tray) {
+  flex: 0 1 auto;
 }
 
 /* ----------------------------------------------------------------------------
@@ -927,6 +933,7 @@
   flex: none;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
   /* Pin to the bottom edge of the row so the controls line up with the last
    * line of a multi-line draft (not floated to the vertical center). */
   align-self: flex-end;
@@ -934,6 +941,18 @@
    * compact editor's min-height. */
   min-height: 2.25rem;
 }
+/* The action cluster is normally rigid, but a bottom-placed "in context" tray
+ * inside it must be able to absorb the squeeze (its chips truncate). Every
+ * OTHER child stays `flex: none`, so with no tray present the cluster still
+ * can't shrink below the sum of its buttons — the resting layout is
+ * unchanged. */
+.composer-compact-actions:has(.composer-context-tray) {
+  flex: 0 1 auto;
+}
+.composer-compact-actions > *:not(.composer-context-tray) {
+  flex: none;
+}
+
 /* Holds Send at the end of the wrapped control line even when there is no
  * leading "+" cluster to push against (every toolbar feature switched off).
  * In the resting row the editor already absorbs the free space, so it's inert. */
@@ -1039,7 +1058,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 0 0.75rem 0.625rem;
+}
+/* Send keeps its full size; the toolbar (and a bottom-placed context tray
+ * inside it) is what gives way when the row is tight. Matched by exclusion so
+ * a consumer's `slots.sendButton` — whatever class it carries — is protected
+ * too. */
+.composer-toolbar-row > *:not(.composer-toolbar) {
+  flex: none;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1049,6 +1076,12 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  min-width: 0;
+}
+/* Same deal as the compact cluster: only a bottom-placed context tray gives
+ * ground when the toolbar row runs out of width. */
+.composer-toolbar > *:not(.composer-context-tray) {
+  flex: none;
 }
 
 .composer-toolbar-btn {
@@ -1604,6 +1637,164 @@
 .composer-chip-remove-inline svg {
   height: 0.875rem;
   width: 0.875rem;
+}
+
+/* ----------------------------------------------------------------------------
+ * "In context" chips.
+ *
+ * Two placements, one chip design. `top` (the default) is a full-width row
+ * above the editor; `bottom` sits inline in the action band, sharing the row
+ * with Send. Deliberately quieter and smaller than an attachment chip: this
+ * row reports what the turn carries, it isn't a control surface, so it
+ * shouldn't compete with the toolbar or Send for attention.
+ * ------------------------------------------------------------------------- */
+/* `top` — a full-width row of its own above the editor. Insets line up with
+ * the editor text rather than the card edge, so the chips sit over the first
+ * character of the draft; the compact bar's editor is 1rem in (0.5rem row
+ * inset + 0.5rem editor padding), the full layout's is 1rem flat. */
+.composer-context-tray[data-placement="top"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.625rem 1rem 0;
+}
+[data-composer-variant="compact"] .composer-context-tray[data-placement="top"] {
+  padding: 0.5rem 0.875rem 0;
+}
+
+/* `bottom` — inline in the action band, sharing the row with Send. It's the
+ * only member of that row allowed to shrink (its chips truncate), so a long
+ * list can never push Send onto a line of its own. */
+.composer-context-tray[data-placement="bottom"] {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+/* Hairline separating the chips from whatever toolbar buttons precede them.
+ * Keyed off DOM position so it disappears when the tray leads the band (every
+ * toolbar feature switched off). */
+.composer-context-tray[data-placement="bottom"]:not(:first-child)::before {
+  content: "";
+  flex: none;
+  width: 1px;
+  height: 0.875rem;
+  margin-inline: 0.1875rem;
+  background: hsl(var(--border));
+}
+.composer-context-tray[data-placement="bottom"]
+  .composer-context-chip-label {
+  max-width: 14ch;
+}
+
+.composer-context-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  height: 1.375rem;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border) / 0.8);
+  background: hsl(var(--muted) / 0.4);
+  color: hsl(var(--muted-foreground));
+  transition: background-color 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease;
+}
+/* Only chips the user can actually do something with react to hover — a chip
+ * holds a button exactly when `onSelect` or `onRemove` was supplied, so an
+ * inert indicator stays flat instead of promising an interaction. */
+.composer-context-chip:has(button):hover {
+  border-color: hsl(var(--primary) / 0.4);
+  color: hsl(var(--foreground));
+}
+.composer-context-chip-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  height: 100%;
+  padding-inline: 0.4375rem;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+}
+button.composer-context-chip-body {
+  cursor: pointer;
+}
+.composer-context-chip-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+.composer-context-chip-icon svg {
+  height: 0.6875rem;
+  width: 0.6875rem;
+}
+.composer-context-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 18ch;
+}
+/* The remove button eats the chip's trailing padding so the × sits flush
+ * inside the pill instead of adding a second inset. */
+.composer-context-chip-remove {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 0.875rem;
+  width: 0.875rem;
+  margin-inline: -0.125rem 0.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+.composer-context-chip-remove:hover {
+  background: hsl(var(--accent));
+  opacity: 1;
+}
+.composer-context-chip-remove svg {
+  height: 0.625rem;
+  width: 0.625rem;
+}
+
+.composer-context-more {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 1.375rem;
+  padding-inline: 0.4375rem;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: hsl(var(--muted) / 0.4);
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.composer-context-more:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+}
+
+.composer-context-chip button:focus-visible,
+.composer-context-more:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4);
 }
 
 /* ----------------------------------------------------------------------------

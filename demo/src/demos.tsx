@@ -46,6 +46,7 @@ import type {
   ComposerSubmitPayload,
   ComposerSxMap,
   ComposerTokens,
+  ContextItem,
   MentionItem,
   SlashCommand,
 } from "composeai";
@@ -164,6 +165,34 @@ const CHANNELS: MentionItem[] = [
   { id: "c2", label: "engineering", description: "Builds, deploys, incidents" },
   { id: "c3", label: "design-crit", description: "Weekly design crits" },
   { id: "c4", label: "random", description: "Memes & life updates" },
+];
+
+/** Pool the "in context" demo pulls from — files, a ticket, and a live source. */
+const CONTEXT_SOURCES: ContextItem[] = [
+  {
+    id: "package.json",
+    label: "package.json",
+    description: "composeai/package.json",
+    icon: <FileText className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "Composer.tsx",
+    label: "Composer.tsx",
+    description: "package/src/Composer.tsx",
+    icon: <Code2 className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "ENG-482",
+    label: "ENG-482",
+    description: "Linear · Ship the inContext chip row",
+    icon: <Hash className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "lexical-docs",
+    label: "Lexical docs",
+    description: "lexical.dev/docs/intro",
+    icon: <Globe2 className="h-3.5 w-3.5" />,
+  },
 ];
 
 const SLASH: SlashCommand[] = [
@@ -1232,6 +1261,73 @@ export function TypedAttachments() {
         },
       }}
       hint="Paperclip → popover → pick a format first"
+    />
+  );
+}
+`,
+  },
+
+  {
+    id: "in-context",
+    title: "In context",
+    group: "Attachments",
+    icon: <Layers className="h-4 w-4" />,
+    tagline: "Show what's riding along with the next turn",
+    description: (
+      <>
+        <code>inContext</code> renders a small chip row for everything the host
+        has put in context — the open file, a linked ticket, a retrieved page.{" "}
+        <code>placement</code> picks where: <code>"top"</code> (default) is a
+        full-width row above the editor, <code>"bottom"</code> sits inline in
+        the action band, sharing the row with Send. Unlike attachments the
+        composer never owns this list: you pass it, the composer shows it, and
+        hands the exact snapshot back on <code>onSend</code> as{" "}
+        <code>payload.inContext</code>. Supply <code>onRemove</code> to make the
+        chips dismissible and <code>onSelect</code> to make them clickable;
+        anything past <code>maxVisible</code> collapses behind a{" "}
+        <code>+N</code> pill.
+      </>
+    ),
+    tryIt: [
+      "Flip the top / bottom toggle — the row moves from above the editor into the action band beside Send.",
+      "Click a source above the composer — it appears as a chip in the row.",
+      "Add a third — the overflow collapses into a +N pill you can click to expand.",
+      "Hover a chip for its full path, or click the × to drop it from context.",
+      "Send a message and check the console — payload.inContext lists the chips.",
+    ],
+    features: offAll,
+    placeholder: "Ask about what's in context…",
+    renderComposer: ({ ref, onSend, placeholder }) => (
+      <InContextDemo
+        composerRef={ref}
+        onSend={onSend}
+        placeholder={placeholder}
+      />
+    ),
+    code: `import { useState } from "react";
+import { Composer, type ContextItem } from "composeai";
+import "composeai/composer.css";
+
+export function InContextComposer() {
+  // The list is yours — the composer only renders it and echoes it back.
+  const [context, setContext] = useState<ContextItem[]>([
+    { id: "package.json", label: "package.json", description: "composeai/package.json" },
+    { id: "ENG-482", label: "ENG-482", description: "Linear · Ship the inContext chip row" },
+  ]);
+
+  return (
+    <Composer
+      placeholder="Ask about what's in context…"
+      inContext={{
+        items: context,
+        placement: "top",                    // or "bottom", inline beside Send
+        maxVisible: 2,                       // the rest collapse behind "+N"
+        onSelect: (item) => openInEditor(item.id),
+        onRemove: (item) =>
+          setContext((prev) => prev.filter((i) => i.id !== item.id)),
+      }}
+      onSend={({ text, inContext }) => ask(text, { context: inContext })}
+      hint="Chips show what the model will see"
     />
   );
 }
@@ -3350,6 +3446,93 @@ function BrandColorDemo({
           web: true,
           voice: false,
           mermaid: false,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Drives the `inContext` demo. The list lives here — in a real app it would
+ * be the editor's open tabs or the retriever's hits — and the composer only
+ * renders it, so removal is just a filter on this state.
+ */
+function InContextDemo({
+  composerRef,
+  onSend,
+  placeholder,
+}: {
+  composerRef: Ref<ComposerHandle>;
+  onSend: (payload: ComposerSubmitPayload) => void;
+  placeholder: string;
+}) {
+  const [items, setItems] = useState<ContextItem[]>(() =>
+    CONTEXT_SOURCES.slice(0, 2),
+  );
+  const [placement, setPlacement] = useState<"top" | "bottom">("top");
+  const available = CONTEXT_SOURCES.filter(
+    (source) => !items.some((item) => item.id === source.id),
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card/40 px-4 py-3">
+        <span className="text-xs font-medium text-muted-foreground">
+          Add to context
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {available.map((source) => (
+            <button
+              key={source.id}
+              type="button"
+              onClick={() => setItems((prev) => [...prev, source])}
+              title={source.description}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/80 px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+            >
+              {source.icon}
+              {source.label}
+            </button>
+          ))}
+          {available.length === 0 && (
+            <span className="text-xs text-muted-foreground">
+              Everything's in context — drop a chip to bring it back.
+            </span>
+          )}
+        </div>
+        <div className="ml-auto flex items-center gap-1 rounded-full border border-border/80 p-0.5">
+          {(["top", "bottom"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setPlacement(option)}
+              aria-pressed={placement === option}
+              className={
+                "rounded-full px-2.5 py-1 font-mono text-[11px] transition " +
+                (placement === option
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Composer
+        ref={composerRef}
+        placeholder={placeholder}
+        autoFocus
+        onSend={onSend}
+        hint={`placement="${placement}" · ${items.length} in context`}
+        features={offAll}
+        inContext={{
+          items,
+          placement,
+          maxVisible: 2,
+          onSelect: (item) => console.log("[in-context] opened:", item),
+          onRemove: (item) =>
+            setItems((prev) => prev.filter((i) => i.id !== item.id)),
         }}
       />
     </div>

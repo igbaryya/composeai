@@ -44,6 +44,7 @@ import { SlashCommandPlugin } from "./plugins/SlashCommandPlugin";
 import { MentionPlugin } from "./plugins/MentionPlugin";
 import { GhostedAutoCompletePlugin } from "./plugins/GhostedAutoCompletePlugin";
 import { AttachmentTray } from "./plugins/AttachmentTray";
+import { InContextTray } from "./ui/InContextTray";
 import { Toolbar } from "./ui/Toolbar";
 import { SendButton } from "./ui/SendButton";
 import { VoiceButton } from "./plugins/VoicePlugin";
@@ -94,6 +95,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     renderDiagram,
     prompts,
     attachmentOptions,
+    inContext,
     dir,
   } = props;
 
@@ -122,6 +124,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       isStreaming={isStreaming}
       closeMenusOnOutsideClick={closeMenusOnOutsideClick}
       attachmentOptions={attachmentOptions}
+      inContext={inContext}
       mode={mode}
       variant={variant}
       multiline={multiline}
@@ -340,6 +343,7 @@ function ComposerInner({
     clearAttachments,
     registerRunPrompt,
     attachmentOptions,
+    inContext,
   } = useComposerContext();
   const canSendOnlyAttachment = attachmentOptions.canSendOnlyAttachment !== false;
   const hasUploadingAttachment = attachments.some((a) => a.status === "uploading");
@@ -387,6 +391,9 @@ function ComposerInner({
         markdown,
         attachments: [...attachments],
         mentions,
+        // Snapshot, not a live reference — the host owns the list and may
+        // mutate it the moment `onSend` returns.
+        inContext: inContext ? [...inContext.items] : [],
       };
     });
     if (!payload) return;
@@ -432,6 +439,8 @@ function ComposerInner({
     isStreaming,
     canSendOnlyAttachment,
     uploadsBlocking,
+    inContext,
+    features.mentions,
   ]);
 
   useComposerHandle(handleRef, submit);
@@ -566,7 +575,15 @@ function ComposerInner({
         variant={variant}
         multiline={multiline}
         expanded={isCompact && isMultiLine}
-        header={<AttachmentTray />}
+        // The `top` half of `inContext.placement`; the `bottom` half lives in
+        // <Toolbar> so those chips share the action band's row with Send.
+        // Whichever spot `placement` doesn't name renders nothing.
+        header={
+          <>
+            <InContextTray at="top" />
+            <AttachmentTray />
+          </>
+        }
         toolbar={toolbarSlot}
         sendButton={sendButtonSlot}
         // Diagram preview placement differs by variant. The `full` layout has

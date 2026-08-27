@@ -209,6 +209,7 @@ const ref = useRef<ComposerHandle>(null);
 | `hint`                     | `boolean \| ReactNode`                | `true`        | Helper line under the composer.                                                    |
 | `prompts`                  | `ComposerPromptsConfig`               | —             | Starter-prompt chips above the composer.                                           |
 | `attachmentOptions`        | `AttachmentOptions`                   | —             | `uploadFirst`, `onUpload`, `canSendOnlyAttachment`.                                |
+| `inContext`                | `ContextItem[] \| InContextConfig`    | —             | "In context" chip row above the editor (or inline beside Send); echoed on `payload.inContext`. |
 | `closeMenusOnOutsideClick` | `boolean`                             | `true`        | Close typeahead menus on outside click.                                            |
 | `dir`                      | `"ltr" \| "rtl" \| "auto"`            | `"ltr"`       | Writing direction. Flips chrome via CSS logical properties.                        |
 | `toolbarExtras`            | `ReactNode`                           | —             | Custom controls appended to the toolbar.                                           |
@@ -271,8 +272,52 @@ interface ComposerSubmitPayload {
   markdown: string;      // markdown source — chips as "@label", live-mode markers reconstructed
   attachments: Attachment[];
   mentions: MentionRef[]; // { id, label }[] — id is stable across label edits
+  inContext: ContextItem[]; // snapshot of the `inContext` prop; [] when unused
 }
 ```
+
+## In context
+
+`inContext` is the "what will the model actually see" row: the open file, the
+linked ticket, the page you retrieved. It renders as a small chip row on the
+composer card and rides along in the submit payload.
+
+`placement` picks where:
+
+- `"top"` (default) — a full-width row above the editor, ahead of the
+  attachment tray. Out of the action band's way, and room for longer labels.
+- `"bottom"` — inline in the action band, after the toolbar buttons and
+  sharing the row with Send. Tighter, and the layout most AI composers use.
+
+Either way the chips are sized and toned down so the row reports rather than
+competes with the toolbar and Send.
+
+It is **controlled**. The composer holds no copy of the list and never mutates
+it: `onRemove` fires, you drop the item from your own state, the chip goes
+away. That's the opposite of `attachments` (which the composer owns end to end)
+and it's deliberate — what's in context is a fact about your app, not about
+the input box.
+
+```tsx
+const [context, setContext] = useState<ContextItem[]>([]);
+
+<Composer
+  inContext={{
+    items: context,
+    placement: "top",                 // or "bottom", inline beside Send
+    maxVisible: 3,                    // the rest collapse behind a "+N" pill
+    onSelect: (item) => openInEditor(item.id),
+    onRemove: (item) =>
+      setContext((prev) => prev.filter((i) => i.id !== item.id)),
+  }}
+  onSend={({ text, inContext }) => ask(text, { context: inContext })}
+/>;
+```
+
+Pass a bare `ContextItem[]` for read-only indicator chips. Each item is
+`{ id, label, description?, icon? }` — `description` lands in the chip's
+tooltip, `icon` overrides the default glyph (`icons.context`). Style the row
+via the `inContextTray` / `inContextChip` slots.
 
 ## Bundle impact
 
