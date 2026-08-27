@@ -1742,9 +1742,10 @@ button.composer-context-chip-body {
   white-space: nowrap;
   max-width: 18ch;
 }
-/* The remove button eats the chip's trailing padding so the × sits flush
- * inside the pill instead of adding a second inset. */
-.composer-context-chip-remove {
+/* The trailing control (dismiss `×`, or restore on a withheld chip) eats the
+ * chip's trailing padding so it sits flush inside the pill instead of adding
+ * a second inset. */
+.composer-context-chip-action {
   display: flex;
   flex: none;
   align-items: center;
@@ -1760,13 +1761,30 @@ button.composer-context-chip-body {
   opacity: 0.55;
   transition: background-color 0.15s ease, opacity 0.15s ease;
 }
-.composer-context-chip-remove:hover {
+.composer-context-chip-action:hover {
   background: hsl(var(--accent));
   opacity: 1;
 }
-.composer-context-chip-remove svg {
+.composer-context-chip-action svg {
   height: 0.625rem;
   width: 0.625rem;
+}
+
+/* Withheld — dismissed but recoverable. The chip stays put and reads as
+ * struck out, while the restore control it now carries stays at full
+ * strength: dimming the way back would defeat the point of keeping it. */
+.composer-context-chip[data-withheld] {
+  border-style: dashed;
+  background: transparent;
+}
+.composer-context-chip[data-withheld] .composer-context-chip-body {
+  opacity: 0.5;
+}
+.composer-context-chip[data-withheld] .composer-context-chip-label {
+  text-decoration: line-through;
+}
+.composer-context-chip[data-withheld] .composer-context-chip-action {
+  opacity: 1;
 }
 
 .composer-context-more {

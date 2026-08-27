@@ -32,7 +32,7 @@ export function InContextTray({ at }: Props) {
   if (!inContext) return null;
   if ((inContext.placement ?? DEFAULT_PLACEMENT) !== at) return null;
 
-  const { items, onSelect, onRemove } = inContext;
+  const { items, onSelect, onRemove, onRestore } = inContext;
   const maxVisible = Math.max(1, inContext.maxVisible ?? DEFAULT_MAX_VISIBLE);
   const visible = expanded ? items : items.slice(0, maxVisible);
   const hidden = expanded ? [] : items.slice(maxVisible);
@@ -57,6 +57,7 @@ export function InContextTray({ at }: Props) {
           item={item}
           onSelect={onSelect ? () => onSelect(item) : undefined}
           onRemove={onRemove ? () => onRemove(item) : undefined}
+          onRestore={onRestore ? () => onRestore(item) : undefined}
         />
       ))}
       {hidden.length > 0 && (

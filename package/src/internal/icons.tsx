@@ -139,6 +139,14 @@ export const IconAudio = makeIcon(
   </>,
 );
 
+export const IconRestore = makeIcon(
+  "IconRestore",
+  <>
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <path d="M3 3v5h5" />
+  </>,
+);
+
 export const IconContext = makeIcon(
   "IconContext",
   <>
@@ -197,6 +205,8 @@ export interface ComposerIcons {
   web: IconComponent;
   /** Close / dismiss (e.g. lightbox, chip remove). */
   close: IconComponent;
+  /** Undo a dismissal — the restore control on a withheld context chip. */
+  restore: IconComponent;
   /** Zoom into an attachment / diagram. */
   zoom: IconComponent;
   /** Generic file (PDF, doc, etc) attachment. */
@@ -223,6 +233,7 @@ export const DEFAULT_ICONS: ComposerIcons = {
   voiceRecording: IconVoiceRecording,
   web: IconWeb,
   close: IconClose,
+  restore: IconRestore,
   zoom: IconZoom,
   file: IconFile,
   audio: IconAudio,

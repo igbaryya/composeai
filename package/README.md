@@ -272,7 +272,7 @@ interface ComposerSubmitPayload {
   markdown: string;      // markdown source — chips as "@label", live-mode markers reconstructed
   attachments: Attachment[];
   mentions: MentionRef[]; // { id, label }[] — id is stable across label edits
-  inContext: ContextItem[]; // snapshot of the `inContext` prop; [] when unused
+  inContext: ContextItem[]; // snapshot of the `inContext` prop, minus withheld items
 }
 ```
 
@@ -301,23 +301,42 @@ the input box.
 ```tsx
 const [context, setContext] = useState<ContextItem[]>([]);
 
+const setWithheld = (id: string, withheld: boolean) =>
+  setContext((prev) => prev.map((i) => (i.id === id ? { ...i, withheld } : i)));
+
 <Composer
   inContext={{
     items: context,
     placement: "top",                 // or "bottom", inline beside Send
     maxVisible: 3,                    // the rest collapse behind a "+N" pill
     onSelect: (item) => openInEditor(item.id),
-    onRemove: (item) =>
-      setContext((prev) => prev.filter((i) => i.id !== item.id)),
+    onRemove: (item) => setWithheld(item.id, true),
+    onRestore: (item) => setWithheld(item.id, false),
   }}
   onSend={({ text, inContext }) => ask(text, { context: inContext })}
 />;
 ```
 
 Pass a bare `ContextItem[]` for read-only indicator chips. Each item is
-`{ id, label, description?, icon? }` — `description` lands in the chip's
-tooltip, `icon` overrides the default glyph (`icons.context`). Style the row
-via the `inContextTray` / `inContextChip` slots.
+`{ id, label, description?, icon?, withheld? }` — `description` lands in the
+chip's tooltip, `icon` overrides the default glyph (`icons.context`). Style the
+row via the `inContextTray` / `inContextChip` slots.
+
+### Withholding is reversible
+
+Dismissing a chip is a single click, so it must not be a one-way door. Handle
+`onRemove` by flagging the item **`withheld`** rather than dropping it from
+`items`:
+
+- The chip stays on the row, struck through and dimmed.
+- Its dismiss `×` swaps for a restore control, gated on `onRestore` — supply
+  it whenever the row is dismissible at all, or the user has no way back.
+- The item is **excluded from `payload.inContext`**. Withheld means withheld
+  from the model, so `onSend` never sees it while the flag is set.
+
+Filtering the item out of `items` still works and is still permanent; it's the
+right call only when the item is genuinely gone (the file closed, the ticket
+unlinked), not when the user merely clicked `×`.
 
 ## Bundle impact
 

@@ -281,6 +281,20 @@ export interface ContextItem {
   description?: string;
   /** Leading glyph. Defaults to the `context` entry of the icon set. */
   icon?: ReactNode;
+  /**
+   * The user has dismissed this item, but it hasn't been thrown away. The
+   * chip stays on the row in a struck-through state carrying a restore
+   * control (see {@link InContextConfig.onRestore}), and the item is
+   * **excluded** from {@link ComposerSubmitPayload.inContext} — withheld
+   * means withheld from the model.
+   *
+   * This is the recoverable alternative to dropping the item from `items`
+   * outright: dismissal is a single click, so without somewhere to put a
+   * dismissed item there is no way back from a misclick. Point `onRemove` at
+   * a state update that sets this flag rather than one that filters the item
+   * out, and pair it with `onRestore` to clear it.
+   */
+  withheld?: boolean;
 }
 
 /**
@@ -315,8 +329,22 @@ export interface InContextConfig {
   /**
    * When set, every chip gets a dismiss `×` that calls this. Omit to make
    * the row read-only.
+   *
+   * Prefer handling this by marking the item {@link ContextItem.withheld}
+   * over deleting it, so the dismissal stays reversible — see `onRestore`.
    */
   onRemove?: (item: ContextItem) => void;
+  /**
+   * When set, a {@link ContextItem.withheld} chip's trailing control becomes
+   * a restore button that calls this instead of the dismiss `×`. Handle it by
+   * clearing the item's `withheld` flag.
+   *
+   * This is what gates the restore affordance: without it a withheld chip
+   * still renders struck through, but the user has no way back. Since
+   * dismissing is one click and otherwise permanent, supply both this and
+   * `onRemove` whenever the row is dismissible at all.
+   */
+  onRestore?: (item: ContextItem) => void;
   /**
    * Chips rendered before the rest collapse behind a `+N` pill the user can
    * click to expand. Defaults to `3`.
@@ -337,6 +365,10 @@ export interface ComposerSubmitPayload {
    * Snapshot of {@link ComposerProps.inContext} at submit time — exactly what
    * the user could see riding along with the message. Empty when the prop
    * isn't used.
+   *
+   * Items flagged {@link ContextItem.withheld} are filtered out: the user
+   * dismissed them, so they are not part of this turn even though their chips
+   * are still on the row waiting to be restored.
    */
   inContext: ContextItem[];
 }
@@ -1108,7 +1140,9 @@ export interface ComposerProps {
    *     placement: "top",
    *     maxVisible: 3,
    *     onSelect: (item) => openInEditor(item.id),
-   *     onRemove: (item) => setOpenFiles((f) => f.filter((x) => x.path !== item.id)),
+   *     // Dismissal is reversible: flag the item, don't drop it.
+   *     onRemove: (item) => setWithheld((w) => ({ ...w, [item.id]: true })),
+   *     onRestore: (item) => setWithheld((w) => ({ ...w, [item.id]: false })),
    *   }}
    *   onSend={({ text, inContext }) => ask(text, { context: inContext })}
    * />

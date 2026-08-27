@@ -400,8 +400,12 @@ function ComposerInner({
         attachments: [...attachments],
         mentions,
         // Snapshot, not a live reference — the host owns the list and may
-        // mutate it the moment `onSend` returns.
-        inContext: inContext ? [...inContext.items] : [],
+        // mutate it the moment `onSend` returns. Withheld items are dropped:
+        // their chips are still on the row (waiting to be restored) but the
+        // user dismissed them, so they are not part of this turn.
+        inContext: inContext
+          ? inContext.items.filter((item) => !item.withheld)
+          : [],
       };
     });
     if (!payload) return;

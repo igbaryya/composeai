@@ -1301,14 +1301,24 @@ export function TypedAttachments() {
         chips dismissible and <code>onSelect</code> to make them clickable;
         anything past <code>maxVisible</code> collapses behind a{" "}
         <code>+N</code> pill.
+        <br />
+        <br />
+        Dismissing is one click, so it stays reversible: handle{" "}
+        <code>onRemove</code> by flagging the item{" "}
+        <code>withheld</code> instead of deleting it. The chip stays on the row
+        struck through, its <code>×</code> swaps for a restore control (gated
+        on <code>onRestore</code>), and the item drops out of{" "}
+        <code>payload.inContext</code> — withheld means withheld from the
+        model.
       </>
     ),
     tryIt: [
       "Flip the top / bottom toggle — the row moves from above the editor into the action band beside Send.",
       "Click a source above the composer — it appears as a chip in the row.",
       "Add a third — the overflow collapses into a +N pill you can click to expand.",
-      "Hover a chip for its full path, or click the × to drop it from context.",
-      "Send a message and check the console — payload.inContext lists the chips.",
+      "Click a chip's × — it goes struck-through rather than vanishing, and the × becomes a restore arrow.",
+      "Click that arrow — the item comes straight back. No dismissal is a dead end.",
+      "Send while something is withheld — the hint counts it out, and payload.inContext omits it.",
     ],
     features: offAll,
     placeholder: "Ask about what's in context…",
@@ -1330,6 +1340,11 @@ export function InContextComposer() {
     { id: "ENG-482", label: "ENG-482", description: "Linear · Ship the inContext chip row" },
   ]);
 
+  const setWithheld = (id: string, withheld: boolean) =>
+    setContext((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, withheld } : i)),
+    );
+
   return (
     <Composer
       placeholder="Ask about what's in context…"
@@ -1338,8 +1353,10 @@ export function InContextComposer() {
         placement: "top",                    // or "bottom", inline beside Send
         maxVisible: 2,                       // the rest collapse behind "+N"
         onSelect: (item) => openInEditor(item.id),
-        onRemove: (item) =>
-          setContext((prev) => prev.filter((i) => i.id !== item.id)),
+        // Withhold instead of delete, so a misclick is one click back.
+        // Withheld items are omitted from payload.inContext.
+        onRemove: (item) => setWithheld(item.id, true),
+        onRestore: (item) => setWithheld(item.id, false),
       }}
       onSend={({ text, inContext }) => ask(text, { context: inContext })}
       hint="Chips show what the model will see"
@@ -3489,6 +3506,11 @@ function InContextDemo({
     (source) => !items.some((item) => item.id === source.id),
   );
 
+  const setWithheld = (id: string, withheld: boolean) =>
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, withheld } : item)),
+    );
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card/40 px-4 py-3">
@@ -3539,15 +3561,19 @@ function InContextDemo({
         placeholder={placeholder}
         autoFocus
         onSend={onSend}
-        hint={`placement="${placement}" · ${items.length} in context`}
+        hint={`placement="${placement}" · ${
+          items.filter((i) => !i.withheld).length
+        } of ${items.length} in context`}
         features={offAll}
         inContext={{
           items,
           placement,
           maxVisible: 2,
           onSelect: (item) => console.log("[in-context] opened:", item),
-          onRemove: (item) =>
-            setItems((prev) => prev.filter((i) => i.id !== item.id)),
+          // Dismissing withholds rather than deletes, so a misclick is one
+          // click back — the chip stays put with a restore control.
+          onRemove: (item) => setWithheld(item.id, true),
+          onRestore: (item) => setWithheld(item.id, false),
         }}
       />
     </div>
