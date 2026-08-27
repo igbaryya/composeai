@@ -52,6 +52,7 @@ import { HintBar } from "./ui/HintBar";
 import { QuickPrompts } from "./ui/QuickPrompts";
 import { useComposerHandle } from "./hooks/useComposerHandle";
 import { useAnimatedPlaceholder } from "./hooks/useAnimatedPlaceholder";
+import { usePromptTypewriter } from "./hooks/usePromptTypewriter";
 import { parseShortcut, matchesShortcut } from "./internal/shortcut";
 import { focusEditor } from "./internal/focusEditor";
 import type { ComposerHandle, ComposerProps, ComposerSubmitPayload } from "./types";
@@ -365,8 +366,15 @@ function ComposerInner({
   const refocusOnSubmitRef = useRef(refocusOnSubmit);
   refocusOnSubmitRef.current = refocusOnSubmit;
 
+  const typePrompt = usePromptTypewriter(editor);
+
   const submit = useCallback(() => {
     if (isStreaming) return;
+    // A send that lands mid-animation (Send button, `ref.submit()`) would
+    // otherwise leave the typewriter dribbling the rest of the prompt into
+    // the freshly-cleared editor. Keystroke-triggered sends are already
+    // covered by the hook's own KEY_DOWN listener.
+    typePrompt.cancel();
     // Block while uploads are pending or have failed — the user has visible
     // chips telling them what's going on; sending mid-flight would lose the
     // attachments. Failed chips also block until the user removes them
@@ -441,6 +449,7 @@ function ComposerInner({
     uploadsBlocking,
     inContext,
     features.mentions,
+    typePrompt,
   ]);
 
   useComposerHandle(handleRef, submit);
@@ -499,21 +508,26 @@ function ComposerInner({
   // *replace* whatever is in the editor — `initValue` means "use this as the
   // starting point", which is unambiguous (and matches every other quick-
   // prompt UX I've seen).
+  //
+  // `initValue` types the prompt in character by character; `sendValue` seeds
+  // it instantly, since animating text the user never gets to read or edit
+  // would only delay the turn.
   useEffect(() => {
     return registerRunPrompt((prompt, behavior) => {
-      editor.update(() => {
-        $seedInitialValue(prompt);
-      });
       if (behavior === "sendValue") {
+        typePrompt.cancel();
+        editor.update(() => {
+          $seedInitialValue(prompt);
+        });
         // Defer to the next microtask so Lexical commits the update above
         // before `submit` reads the editor state. Without this, `submit`
         // would serialize the *previous* state and ignore the prompt.
         queueMicrotask(() => submit());
-      } else {
-        focusEditor(editor);
+        return;
       }
+      typePrompt.type(prompt);
     });
-  }, [editor, registerRunPrompt, submit]);
+  }, [editor, registerRunPrompt, submit, typePrompt]);
 
   const isCompact = variant === "compact";
   // Typewriter placeholder. Active only while the editor is empty (the

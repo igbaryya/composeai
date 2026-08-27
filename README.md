@@ -56,7 +56,7 @@ Or explore the hosted gallery at **[igbaryya.github.io/composeai](https://igbary
 | Attachments                     | Paperclip + paste + drag-drop, optional type-picker popover, optional `uploadFirst` pipeline      |
 | Voice input                     | Web Speech API with MediaRecorder fallback                                                        |
 | Mermaid diagrams                | `mermaid` is an **optional** peer dep — lazy-imported, or pass `renderDiagram` to skip entirely   |
-| Quick prompts                   | Starter chips above the composer (`sendValue` or `initValue` behaviour)                           |
+| Quick prompts                   | Starter chips above the composer — one scrolling line; `initValue` (default) or `sendValue`       |
 | In context                      | `inContext` chip row (top or bottom edge) showing what rides along; echoed on `payload.inContext` |
 | Animated placeholder            | `animatedPlaceholder={["…", "…"]}` types phrases out token-by-token while the editor is empty     |
 | Slots                           | Replace any chrome piece wholesale (currently `sendButton`, `stopButton`) via render-prop slots   |

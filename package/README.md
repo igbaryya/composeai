@@ -207,7 +207,7 @@ const ref = useRef<ComposerHandle>(null);
 | `submitOnEnter`            | `boolean`                             | `true`        | When `false`, only Cmd/Ctrl+Enter (or the button) submits.                         |
 | `smartNewline`             | `boolean`                             | `true`        | Once the draft has >1 line, Enter inserts a newline instead of submitting.         |
 | `hint`                     | `boolean \| ReactNode`                | `true`        | Helper line under the composer.                                                    |
-| `prompts`                  | `ComposerPromptsConfig`               | —             | Starter-prompt chips above the composer.                                           |
+| `prompts`                  | `ComposerPromptsConfig`               | —             | Starter-prompt chips above the composer. Click types the prompt in (`initValue`).   |
 | `attachmentOptions`        | `AttachmentOptions`                   | —             | `uploadFirst`, `onUpload`, `canSendOnlyAttachment`.                                |
 | `inContext`                | `ContextItem[] \| InContextConfig`    | —             | "In context" chip row above the editor (or inline beside Send); echoed on `payload.inContext`. |
 | `closeMenusOnOutsideClick` | `boolean`                             | `true`        | Close typeahead menus on outside click.                                            |

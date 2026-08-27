@@ -2067,12 +2067,76 @@ button.composer-context-chip-body {
 /* ----------------------------------------------------------------------------
  * Quick-prompt + suggestion chip rows.
  * ------------------------------------------------------------------------- */
+/* Quick prompts scroll on one line instead of wrapping into rows, and ghost
+ * out at whichever edge still has chips past it (the `data-overflow-*`
+ * attributes are set by QuickPrompts from the live scroll position).
+ *
+ * The fade is a MASK, not a gradient overlay: the composer sits on whatever
+ * background the host app has, so there's no colour we could fade to. The
+ * `--prompts-mask-*` stops default to opaque, which makes the always-applied
+ * mask a no-op until an edge actually overflows. */
 .composer-prompts {
+  --prompts-mask-start: #000;
+  --prompts-mask-end: #000;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 0.25rem 0.25rem;
+  /* A scroll container clips at its padding box, and `overflow-y` can't be
+   * `visible` while `overflow-x` scrolls (CSS coerces it to `auto`). So the
+   * chips' hover lift (-1px) and focus ring (2px) need real padding to live
+   * in, and a matching negative margin to keep the row's outer spacing
+   * exactly where it was. */
+  margin-block: -0.25rem;
+  padding: 0.25rem 0.25rem 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* The chips are the scrollable content — never let them shrink to fit. */
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    var(--prompts-mask-start) 0,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    var(--prompts-mask-end) 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    var(--prompts-mask-start) 0,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    var(--prompts-mask-end) 100%
+  );
+}
+.composer-prompts::-webkit-scrollbar {
+  display: none;
+}
+.composer-prompts > * {
+  flex: none;
+}
+.composer-prompts[data-overflow-start] {
+  --prompts-mask-start: transparent;
+}
+.composer-prompts[data-overflow-end] {
+  --prompts-mask-end: transparent;
+}
+/* Mask gradients take physical directions, so RTL needs the axis flipped —
+ * the logical start edge is the right-hand one. */
+[dir="rtl"] .composer-prompts {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    var(--prompts-mask-start) 0,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    var(--prompts-mask-end) 100%
+  );
+  mask-image: linear-gradient(
+    to left,
+    var(--prompts-mask-start) 0,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    var(--prompts-mask-end) 100%
+  );
 }
 .composer-suggestions {
   display: flex;

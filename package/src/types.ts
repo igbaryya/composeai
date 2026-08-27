@@ -147,11 +147,14 @@ export type DiagramRenderer = (params: {
 
 /**
  * How a click on a quick-prompt chip is interpreted.
- *  - `"sendValue"` (default): drop the prompt into the editor and submit
- *    immediately. The user sees their `onSend` payload fire as if they
- *    typed it and pressed Enter.
- *  - `"initValue"`: drop the prompt into the editor but do NOT submit —
- *    the user can edit it further before sending.
+ *  - `"initValue"` (default): type the prompt into the editor character by
+ *    character but do NOT submit — the chip is a starting point the user can
+ *    edit, extend, or abandon before sending. Typing stops the moment the
+ *    user hits a key or sends, and `prefers-reduced-motion` fills it in at
+ *    once instead.
+ *  - `"sendValue"`: drop the prompt into the editor and submit immediately.
+ *    The user sees their `onSend` payload fire as if they typed it and
+ *    pressed Enter.
  */
 export type ComposerPromptBehavior = "sendValue" | "initValue";
 
@@ -162,9 +165,10 @@ export interface ComposerPromptsConfig {
    */
   items: string[];
   /**
-   * What clicking a chip should do. Defaults to `"sendValue"` — clicking
-   * a prompt fills the editor and submits immediately, which matches the
-   * "starter prompts" UX users see in most AI chat surfaces.
+   * What clicking a chip should do. Defaults to `"initValue"` — the prompt
+   * types itself into the editor and the caret is left at the end, so the
+   * chip reads as a draft the user can tweak rather than a button that fires
+   * a turn. Pass `"sendValue"` for click-to-send.
    */
   behavior?: ComposerPromptBehavior;
   /**
@@ -173,8 +177,9 @@ export interface ComposerPromptsConfig {
    */
   onSelect?: (prompt: string) => void;
   /**
-   * Maximum number of chips rendered at once. Defaults to `3`, hard-capped
-   * at `5` to keep the chip row from dominating the composer.
+   * Maximum number of chips rendered at once. Defaults to `3`. There's no
+   * upper bound — the row is a single horizontally-scrolling line, so extra
+   * chips cost scroll distance rather than stacking rows over the composer.
    */
   maxToShow?: number;
   /**
@@ -1056,10 +1061,12 @@ export interface ComposerProps {
    */
   renderDiagram?: DiagramRenderer;
   /**
-   * "Starter" prompts shown as a clickable chip row above the composer.
-   * Clicking a chip either fills the editor (`behavior: "initValue"`) or
-   * fills + submits (`behavior: "sendValue"`, default). Useful as a
-   * zero-typing entry point on an empty chat surface.
+   * "Starter" prompts shown as a clickable chip row above the composer. The
+   * row scrolls horizontally on one line (fading out at whichever edge has
+   * more chips past it) rather than wrapping. Clicking a chip either types
+   * the prompt into the editor (`behavior: "initValue"`, default) or fills +
+   * submits it (`behavior: "sendValue"`). Useful as a low-typing entry point
+   * on an empty chat surface.
    *
    * @example
    * ```tsx
@@ -1074,7 +1081,7 @@ export interface ComposerProps {
    *     ],
    *     maxToShow: 3,           // show 3 chips out of 5
    *     randomize: true,        // pick a different 3 each mount
-   *     behavior: "sendValue",  // click → fill + submit
+   *     behavior: "initValue",  // click → fill the editor (default)
    *     onSelect: (p) => track("prompt_picked", { p }),
    *   }}
    * />

@@ -620,25 +620,30 @@ export function FullComposer() {
     description: (
       <>
         Hand <code>&lt;Composer /&gt;</code> a list of starter prompts and it
-        renders a chip row above the input. A click either fills the editor (
-        <code>behavior: "initValue"</code>) so the user can keep typing, or
-        fills <em>and</em> submits (<code>behavior: "sendValue"</code>,
-        default) — perfect for an empty-state "what do you want to do?"
-        surface. With <code>randomize: true</code> (default) the visible
+        renders a chip row above the input. A click types the prompt into the
+        editor character by character and leaves the caret at the end (
+        <code>behavior: "initValue"</code>, default) so the user can tweak it
+        before sending; pass <code>behavior: "sendValue"</code> for
+        click-to-send. The row scrolls on
+        one line rather than wrapping, ghosting out at whichever edge still has
+        chips past it. With <code>randomize: true</code> (default) the visible
         subset is shuffled on each mount, so different sessions see
         different suggestions out of a larger pool.
       </>
     ),
     tryIt: [
-      "Click any chip — the prompt is sent immediately (default behavior).",
-      "Refresh the page a few times — the visible 3 chips rotate from the pool of 6.",
+      "Click any chip — the prompt types itself into the editor, ready to edit (default behavior).",
+      "Click a chip, then start typing before it finishes — the animation stops and hands over to you.",
+      "Scroll the chip row sideways — it ghosts out at whichever edge still has chips past it.",
+      "Refresh the page a few times — the visible 8 chips rotate from the pool of 11.",
       "Look at the console — onSelect fires with the picked prompt.",
     ],
     features: offAll,
     placeholder: "Or type your own…",
     prompts: {
-      behavior: "sendValue",
-      maxToShow: 3,
+      // Deliberately more chips than fit — this demo is where the row's
+      // horizontal scroll and edge ghosting are meant to be visible.
+      maxToShow: 8,
       randomize: true,
       items: [
         "Summarize today's stand-up",
@@ -647,6 +652,11 @@ export function FullComposer() {
         "Brainstorm names for my project",
         "Plan next sprint",
         "Explain useEffect to a junior dev",
+        "Turn these notes into a spec",
+        "Write tests for this module",
+        "Review my migration plan",
+        "Draft a changelog entry",
+        "Compare Postgres and SQLite here",
       ],
       onSelect: (prompt) =>
         console.log("[quick-prompts] picked:", prompt),
@@ -667,10 +677,15 @@ export function QuickPromptsComposer() {
           "Brainstorm names for my project",
           "Plan next sprint",
           "Explain useEffect to a junior dev",
+          "Turn these notes into a spec",
+          "Write tests for this module",
+          "Review my migration plan",
+          "Draft a changelog entry",
+          "Compare Postgres and SQLite here",
         ],
-        behavior: "sendValue", // click → fill + submit (default)
-        maxToShow: 3,           // show 3 of the 6 (hard-capped at 5)
-        randomize: true,        // pick a different 3 on each mount
+        behavior: "initValue", // click → fill the editor (default)
+        maxToShow: 8,           // 8 of the 11 — the row scrolls, no cap
+        randomize: true,        // pick a different 8 on each mount
         onSelect: (prompt) => track("quick_prompt_picked", { prompt }),
       }}
       hint="Starter chips above the composer"

@@ -30,7 +30,7 @@ import {
 } from "lexical";
 
 /** Normalize CRLF / CR to LF so we never end up with stray `\r` in nodes. */
-function normalize(text: string): string {
+export function normalizeNewlines(text: string): string {
   return text.replace(/\r\n?/g, "\n");
 }
 
@@ -42,7 +42,7 @@ function normalize(text: string): string {
  * The caller must be inside an `editor.update(...)` scope.
  */
 export function $insertTextWithParagraphBreaks(text: string): void {
-  const lines = normalize(text).split("\n");
+  const lines = normalizeNewlines(text).split("\n");
 
   const current = (): RangeSelection | null => {
     const s = $getSelection();
@@ -102,7 +102,7 @@ export function $insertTextWithParagraphBreaks(text: string): void {
 export function $seedInitialValue(text: string): void {
   const root = $getRoot();
   root.clear();
-  const lines = normalize(text).split("\n");
+  const lines = normalizeNewlines(text).split("\n");
   if (lines.length === 0) {
     const para = $createParagraphNode();
     root.append(para);

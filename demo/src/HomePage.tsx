@@ -786,7 +786,7 @@ const COMPOSER_PROPS: PropRow[] = [
     optional: true,
     defaultValue: "—",
     description:
-      'Starter-prompt chips rendered above the composer. `behavior: "sendValue"` (default) clicks → fill + submit; `"initValue"` just fills. Honors `maxToShow` (≤ 5) and `randomize` (default true).',
+      'Starter-prompt chips rendered above the composer, on one horizontally-scrolling line that fades at its overflowing edges. `behavior: "initValue"` (default) types the prompt into the editor character by character; `"sendValue"` fills + submits instantly. Honors `maxToShow` (default 3, no upper bound) and `randomize` (default true).',
   },
   {
     name: "attachmentOptions",
