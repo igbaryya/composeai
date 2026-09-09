@@ -60,7 +60,7 @@ import type { ComposerHandle, ComposerProps, ComposerSubmitPayload } from "./typ
 /**
  * ComposeAI — a Lexical-powered, plugin-driven rich input designed for
  * chat / AI assistant interfaces. Internally stateful: parents only listen via
- * `onSend` and (optionally) hold an imperative `ref`.
+ * `onSend` / `onChange` and (optionally) hold an imperative `ref`.
  */
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
   props,
@@ -70,6 +70,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     placeholder = "Send a message…",
     animatedPlaceholder,
     onSend,
+    onChange,
     onStop,
     isStreaming,
     autoFocus,
@@ -156,6 +157,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           initialValue={initialValue}
           handleRef={ref}
           onSend={onSend}
+          onChange={onChange}
           onStop={onStop}
           autoFocus={autoFocus}
           refocusOnSubmit={refocusOnSubmit}
@@ -180,6 +182,7 @@ interface CardProps {
   initialValue?: string;
   handleRef: React.ForwardedRef<ComposerHandle>;
   onSend?: ComposerProps["onSend"];
+  onChange?: ComposerProps["onChange"];
   onStop?: ComposerProps["onStop"];
   autoFocus?: boolean;
   refocusOnSubmit: boolean;
@@ -222,6 +225,7 @@ function ComposerCard({
   initialValue,
   handleRef,
   onSend,
+  onChange,
   onStop,
   autoFocus,
   refocusOnSubmit,
@@ -289,6 +293,7 @@ function ComposerCard({
           multiline={multiline}
           handleRef={handleRef}
           onSend={onSend}
+          onChange={onChange}
           onStop={onStop}
           autoFocus={autoFocus}
           refocusOnSubmit={refocusOnSubmit}
@@ -311,6 +316,7 @@ interface InnerProps {
   multiline: boolean;
   handleRef: React.ForwardedRef<ComposerHandle>;
   onSend?: ComposerProps["onSend"];
+  onChange?: ComposerProps["onChange"];
   onStop?: ComposerProps["onStop"];
   autoFocus?: boolean;
   refocusOnSubmit: boolean;
@@ -329,6 +335,7 @@ function ComposerInner({
   multiline,
   handleRef,
   onSend,
+  onChange,
   onStop,
   autoFocus,
   refocusOnSubmit,
@@ -351,6 +358,10 @@ function ComposerInner({
   const hasFailedAttachment = attachments.some((a) => a.status === "failed");
   const uploadsBlocking = hasUploadingAttachment || hasFailedAttachment;
   const markdownEnabled = mode === "markdown" && features.markdown;
+  // How mentions serialize; shared by `submit` and the `onChange` listener so
+  // both report the same markdown.
+  const linkedMention =
+    typeof features.mentions === "object" && !!features.mentions.linkedMention;
   const [hasText, setHasText] = useState<boolean>(
     !!initialValue && initialValue.trim().length > 0,
   );
@@ -363,6 +374,8 @@ function ComposerInner({
 
   const onSendRef = useRef(onSend);
   onSendRef.current = onSend;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const refocusOnSubmitRef = useRef(refocusOnSubmit);
   refocusOnSubmitRef.current = refocusOnSubmit;
 
@@ -381,8 +394,6 @@ function ComposerInner({
     // (re-attaching the same file is the retry path).
     if (uploadsBlocking) return;
     let payload: ComposerSubmitPayload | null = null;
-    const linkedMention =
-      typeof features.mentions === "object" && !!features.mentions.linkedMention;
     editor.getEditorState().read(() => {
       const { text, mentions } = collectPlainAndMentions(editor);
       const markdown = toMarkdown(editor, { linkedMention });
@@ -452,7 +463,7 @@ function ComposerInner({
     canSendOnlyAttachment,
     uploadsBlocking,
     inContext,
-    features.mentions,
+    linkedMention,
     typePrompt,
   ]);
 
@@ -493,6 +504,10 @@ function ComposerInner({
     });
   }, [editor, initialValue]);
 
+  // Last markdown handed to `onChange`. Update listeners also fire for pure
+  // selection changes (every caret move), so the serialized value is what
+  // decides whether the content actually changed.
+  const lastEmittedRef = useRef<string | null>(null);
   useEffect(() => {
     return editor.registerUpdateListener(() => {
       editor.getEditorState().read(() => {
@@ -502,9 +517,17 @@ function ComposerInner({
         // More than one top-level paragraph, or a soft break inside one,
         // means the bar should expand into its stacked (footer) layout.
         setIsMultiLine(root.getChildrenSize() > 1 || text.includes("\n"));
+
+        // Serializing is only worth it for a host that asked to be told.
+        const notify = onChangeRef.current;
+        if (!notify) return;
+        const markdown = toMarkdown(editor, { linkedMention });
+        if (markdown === lastEmittedRef.current) return;
+        lastEmittedRef.current = markdown;
+        notify({ text, markdown });
       });
     });
-  }, [editor]);
+  }, [editor, linkedMention]);
 
   // Quick-prompts bridge: the chip row lives above the editor so it doesn't
   // own the editor state or the submit function. It pipes its clicks through

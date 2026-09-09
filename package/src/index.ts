@@ -20,6 +20,7 @@ export type {
   AttachmentsConfig,
   AttachmentStatus,
   AttachmentTypeOption,
+  ComposerChangePayload,
   ComposerFeatures,
   ComposerHandle,
   ComposerIcons,

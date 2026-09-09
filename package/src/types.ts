@@ -373,6 +373,19 @@ export interface ComposerSubmitPayload {
   inContext: ContextItem[];
 }
 
+/**
+ * What {@link ComposerProps.onChange} reports on every edit. A subset of
+ * {@link ComposerSubmitPayload}: attachments and in-context items are owned by
+ * the host (it hands them to the composer), so only the editor's own text is
+ * echoed back.
+ */
+export interface ComposerChangePayload {
+  /** Plain text (chips collapsed to their labels), untrimmed. */
+  text: string;
+  /** Serialized markdown including chips as `@label`. */
+  markdown: string;
+}
+
 export interface MentionConfig {
   /** Static list, or async resolver that receives the query (without `@`). */
   items: MentionItem[] | ((query: string) => MentionItem[] | Promise<MentionItem[]>);
@@ -838,6 +851,27 @@ export interface ComposerProps {
   initialValue?: string;
   /** Called when the user submits. */
   onSend?: (payload: ComposerSubmitPayload) => void;
+  /**
+   * Called whenever the editor's content changes, so the composer can back a
+   * persistent field (a settings form, a saved draft) rather than only a
+   * send-and-clear chat bar — the one thing `onSend` can't do, since it
+   * refuses to fire on an empty editor and clears what it sends.
+   *
+   * Opt-in: markdown is only serialized while this prop is set, and the
+   * callback is skipped when an edit leaves the markdown identical (caret
+   * moves, selection changes), so it fires per *content* change, not per
+   * keystroke. Seeding {@link ComposerProps.initialValue} emits once.
+   *
+   * The composer stays internally stateful — this reports the value, it does
+   * not accept one back. Re-seeding from outside means remounting with a new
+   * `initialValue`.
+   *
+   * @example
+   * ```tsx
+   * <Composer initialValue={draft} onChange={({ markdown }) => setDraft(markdown)} />
+   * ```
+   */
+  onChange?: (payload: ComposerChangePayload) => void;
   /** Called when the stop button is clicked while `isStreaming`. */
   onStop?: () => void;
   isStreaming?: boolean;
