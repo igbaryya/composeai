@@ -20,6 +20,7 @@ import type { Klass, LexicalNode } from "lexical";
 import {
   $createParagraphNode,
   $getRoot,
+  $setSelection,
   ParagraphNode,
 } from "lexical";
 import { $seedInitialValue } from "./internal/insertText";
@@ -506,22 +507,28 @@ function ComposerInner({
     if (seededRef.current) return;
     seededRef.current = true;
     if (!initialValue) return;
-    // `$seedInitialValue` ends by selecting the end of the text, so imperative
-    // `insert()` calls have somewhere to land. Lexical would then sync that
-    // selection to the DOM, which makes the contenteditable the active element
-    // — so ANY seeded composer stole focus on mount, ignoring `autoFocus` and
-    // taking focus from whatever a dialog had focused first.
+    // `$seedInitialValue` ends by selecting the end of the text, and Lexical
+    // syncs a pending selection to the DOM — which makes the contenteditable
+    // the active element. So ANY seeded composer stole focus on mount,
+    // ignoring `autoFocus` and taking focus from whatever a dialog focused
+    // first.
     //
-    // The selection lives in the editor state, and that is what `insert()`
-    // reads; only the DOM sync has to go. Hence `skip-dom-selection` and NOT
-    // `skip-selection-focus` — the latter suppresses the explicit
-    // `rootElement.focus()` but still applies the DOM selection, which focuses
-    // the editing host anyway. `autoFocus` (via <AutoFocusPlugin>) is left as
-    // the only thing that decides, and seeds from a user gesture (quick
-    // prompts, `ref.insert()`) are untouched, since there focus is the point.
+    // Dropping the selection is what fixes it, and tagging alone is not
+    // enough: a tag only covers ITS OWN commit, so the next untagged update
+    // (the markdown plugin re-tokenizing the seeded text) syncs the pending
+    // selection and focuses anyway. With no selection there is nothing left to
+    // sync, on this commit or any later one. `skip-dom-selection` stays so
+    // this commit doesn't touch the DOM selection on its way past.
+    //
+    // Nothing depends on the selection surviving: `$insertTextWithParagraph-
+    // Breaks` already selects the end itself when it finds none, so a later
+    // `insert()` still lands correctly. Seeds from a user gesture (quick
+    // prompts, `ref.insert()`) go through their own path and still focus,
+    // which is the point there.
     editor.update(
       () => {
         $seedInitialValue(initialValue);
+        $setSelection(null);
       },
       { tag: "skip-dom-selection" },
     );
