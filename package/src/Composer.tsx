@@ -506,9 +506,20 @@ function ComposerInner({
     if (seededRef.current) return;
     seededRef.current = true;
     if (!initialValue) return;
-    editor.update(() => {
-      $seedInitialValue(initialValue);
-    });
+    // `$seedInitialValue` ends by selecting the end of the text, so imperative
+    // `insert()` calls have somewhere to land. Lexical would carry that
+    // selection into the DOM and focus the editor, which made ANY seeded
+    // composer steal focus on mount — ignoring `autoFocus`, and stealing it
+    // from whatever a dialog focused first. This tag keeps the selection and
+    // drops only the focus, leaving `autoFocus` (via <AutoFocusPlugin>) as the
+    // one thing that decides. Seeds from a user gesture (quick prompts,
+    // `ref.insert()`) are untouched — there, focus is the point.
+    editor.update(
+      () => {
+        $seedInitialValue(initialValue);
+      },
+      { tag: "skip-selection-focus" },
+    );
   }, [editor, initialValue]);
 
   // Last markdown handed to `onChange`. Update listeners also fire for pure
