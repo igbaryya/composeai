@@ -872,6 +872,20 @@ export interface ComposerProps {
    * ```
    */
   onChange?: (payload: ComposerChangePayload) => void;
+  /**
+   * Accessible name for the editor itself. Defaults to `"Message"`, which is
+   * right for a chat bar and wrong everywhere else — a composer backing a
+   * settings field should name that field.
+   *
+   * This is the only way to label the editor: it is a contenteditable, not a
+   * form control, so a `<label for>` cannot target it.
+   *
+   * @example
+   * ```tsx
+   * <Composer ariaLabel="Role context" onChange={…} />
+   * ```
+   */
+  ariaLabel?: string;
   /** Called when the stop button is clicked while `isStreaming`. */
   onStop?: () => void;
   isStreaming?: boolean;

@@ -99,6 +99,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     attachmentOptions,
     inContext,
     dir,
+    ariaLabel,
   } = props;
 
   // Whether the consumer explicitly passed a `placeholder` (vs. falling back
@@ -137,6 +138,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       slots={slots}
       renderDiagram={renderDiagram}
       dir={dir}
+      ariaLabel={ariaLabel}
       classNames={classNames}
       sx={sx}
       tokenStyle={tokenStyle}

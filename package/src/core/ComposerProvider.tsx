@@ -107,6 +107,8 @@ interface ComposerContextValue {
    * composer root.
    */
   dir?: "ltr" | "rtl" | "auto";
+  /** Accessible name for the editor (see `ComposerProps.ariaLabel`). */
+  ariaLabel?: string;
   /** Per-slot className overrides forwarded to every internal component. */
   classNames?: ComposerSlotClassNames;
   /** Per-slot `sx` overrides forwarded to every internal component. */
@@ -211,6 +213,7 @@ interface ProviderProps {
   slots?: ComposerSlots;
   renderDiagram?: DiagramRenderer;
   dir?: "ltr" | "rtl" | "auto";
+  ariaLabel?: string;
   classNames?: ComposerSlotClassNames;
   sx?: ComposerSxMap;
   tokenStyle?: CSSProperties;
@@ -233,6 +236,7 @@ export function ComposerProvider({
   slots,
   renderDiagram,
   dir,
+  ariaLabel,
   classNames,
   sx,
   tokenStyle,
@@ -468,6 +472,7 @@ export function ComposerProvider({
       slots: slots ?? EMPTY_SLOTS,
       renderDiagram,
       dir,
+      ariaLabel,
       classNames,
       sx,
       tokenStyle,
@@ -502,6 +507,7 @@ export function ComposerProvider({
       slots,
       renderDiagram,
       dir,
+      ariaLabel,
       classNames,
       sx,
       tokenStyle,

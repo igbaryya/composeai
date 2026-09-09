@@ -92,7 +92,7 @@ export function EditorShell({
   sendButton,
   footer,
 }: EditorShellProps) {
-  const { classNames, sx, dir } = useComposerContext();
+  const { classNames, sx, dir, ariaLabel } = useComposerContext();
   const isMarkdown = mode === "markdown";
   const isCompact = variant === "compact";
   // Both the compact bar and the inline (multiline === false) layout make the
@@ -139,7 +139,7 @@ export function EditorShell({
   );
 
   const contentEditable = (
-    <ContentEditable {...editor} aria-label="Message" spellCheck dir={dir} />
+    <ContentEditable {...editor} aria-label={ariaLabel ?? "Message"} spellCheck dir={dir} />
   );
   const placeholderEl = (
     <div {...placeholderProps} dir={dir}>
