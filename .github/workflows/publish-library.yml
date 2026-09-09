@@ -24,13 +24,16 @@ on:
           - major
 
 permissions:
+  # `id-token` is what makes this publish work: npm trades this run's OIDC
+  # identity for a short-lived credential, so there is no NPM_TOKEN to expire,
+  # leak, or revoke. Registered on npmjs.com against this repo + THIS filename,
+  # so renaming the file breaks publishing until it is re-registered.
   contents: write
+  id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,6 +45,12 @@ jobs:
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
+
+      # Node 20 ships npm 10, which predates trusted publishing (needs 11.5.1+).
+      # Pinned to the 11 line so a future major can't raise the Node floor out
+      # from under the `node-version` above.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@11
 
       - name: Install dependencies
         run: npm install
@@ -56,14 +65,6 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true }}
         run: npm publish -w composeai --dry-run
 
-      - name: Verify npm token
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run == false }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::NPM_TOKEN secret is missing. Add it under Settings → Secrets and variables → Actions."
-            exit 1
-          fi
-
       - name: Bump version
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run == false }}
         id: version
@@ -75,6 +76,10 @@ jobs:
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "Bumped to v${NEW_VERSION}"
 
+      # No credential is passed: npm authenticates via the OIDC identity granted
+      # by `id-token: write` above, and attaches build provenance for free. A
+      # 404 here means the trusted publisher isn't registered for this repo and
+      # workflow filename (npm answers 404, not 403, on writes it won't allow).
       - name: Publish to npm
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run == false }}
         run: npm publish -w composeai --access public
