@@ -395,6 +395,11 @@ function ComposerInner({
     // attachments. Failed chips also block until the user removes them
     // (re-attaching the same file is the retry path).
     if (uploadsBlocking) return;
+    // Nothing is listening, so there is no send to perform — and the clear
+    // below would just destroy the draft. Reachable whenever a composer backs
+    // a persistent field rather than a chat bar: Cmd/Ctrl+Enter force-submits
+    // by design, past `submitOnEnter: false` and past an absent Send button.
+    if (!onSendRef.current) return;
     let payload: ComposerSubmitPayload | null = null;
     editor.getEditorState().read(() => {
       const { text, mentions } = collectPlainAndMentions(editor);
