@@ -507,18 +507,23 @@ function ComposerInner({
     seededRef.current = true;
     if (!initialValue) return;
     // `$seedInitialValue` ends by selecting the end of the text, so imperative
-    // `insert()` calls have somewhere to land. Lexical would carry that
-    // selection into the DOM and focus the editor, which made ANY seeded
-    // composer steal focus on mount — ignoring `autoFocus`, and stealing it
-    // from whatever a dialog focused first. This tag keeps the selection and
-    // drops only the focus, leaving `autoFocus` (via <AutoFocusPlugin>) as the
-    // one thing that decides. Seeds from a user gesture (quick prompts,
-    // `ref.insert()`) are untouched — there, focus is the point.
+    // `insert()` calls have somewhere to land. Lexical would then sync that
+    // selection to the DOM, which makes the contenteditable the active element
+    // — so ANY seeded composer stole focus on mount, ignoring `autoFocus` and
+    // taking focus from whatever a dialog had focused first.
+    //
+    // The selection lives in the editor state, and that is what `insert()`
+    // reads; only the DOM sync has to go. Hence `skip-dom-selection` and NOT
+    // `skip-selection-focus` — the latter suppresses the explicit
+    // `rootElement.focus()` but still applies the DOM selection, which focuses
+    // the editing host anyway. `autoFocus` (via <AutoFocusPlugin>) is left as
+    // the only thing that decides, and seeds from a user gesture (quick
+    // prompts, `ref.insert()`) are untouched, since there focus is the point.
     editor.update(
       () => {
         $seedInitialValue(initialValue);
       },
-      { tag: "skip-selection-focus" },
+      { tag: "skip-dom-selection" },
     );
   }, [editor, initialValue]);
 
