@@ -781,6 +781,14 @@ const COMPOSER_PROPS: PropRow[] = [
       "Helper line under the composer. `false` hides it; pass any node to replace the default.",
   },
   {
+    name: "hideHintOnScrollUp",
+    type: "boolean",
+    optional: true,
+    defaultValue: "false",
+    description:
+      "Collapse the hint out of the layout (height and the gap above it) while the page scrolls up, and bring it back on scroll down. For a composer pinned to the bottom of the viewport: it drops to the bottom edge while the user reads back through the history. Listens to any scroller (window or an inner message list) and ignores scrolls inside the composer.",
+  },
+  {
     name: "prompts",
     type: "ComposerPromptsConfig",
     optional: true,

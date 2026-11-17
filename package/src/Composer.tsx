@@ -86,6 +86,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     tokens,
     color,
     hint = true,
+    hideHintOnScrollUp = false,
     features,
     toolbarExtras,
     closeMenusOnOutsideClick = true,
@@ -174,7 +175,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           variant={variant}
           multiline={multiline}
         />
-        <HintBar hint={hint} />
+        <HintBar hint={hint} hideOnScrollUp={hideHintOnScrollUp} />
       </div>
     </ComposerProvider>
   );

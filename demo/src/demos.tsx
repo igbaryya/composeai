@@ -104,6 +104,8 @@ export interface DemoSpec {
   /** Attachment lifecycle & rules forwarded to <Composer />. */
   attachmentOptions?: AttachmentOptions;
   hint?: boolean | ReactNode;
+  /** See `ComposerProps.hideHintOnScrollUp`. */
+  hideHintOnScrollUp?: ComposerProps["hideHintOnScrollUp"];
   toolbarExtras?: ReactNode;
   /** Per-slot className overrides forwarded to <Composer />. */
   classNames?: ComposerSlotClassNames;
@@ -1971,6 +1973,50 @@ export function HintComposer() {
         </span>
       }
     />
+  );
+}
+`,
+  },
+
+  {
+    id: "hint-auto-hide",
+    title: "Hint auto-hide",
+    group: "Control",
+    icon: <Sliders className="h-4 w-4" />,
+    tagline: "Collapse the hint while the chat scrolls up",
+    description: (
+      <>
+        Set <code>hideHintOnScrollUp</code> and the hint collapses out of the
+        layout while the page scrolls up, then comes back as soon as it
+        scrolls down. Built for a composer pinned to the bottom of the
+        viewport: while the user reads back through the history the card
+        drops to the bottom edge and covers less of the conversation. It
+        listens to whatever scrolls (the window or an inner message list)
+        and ignores scrolls inside the composer itself.
+      </>
+    ),
+    tryIt: [
+      "Scroll this panel up. The hint under the composer collapses and the card drops into its space.",
+      "Scroll back down. The hint comes back.",
+      "Scroll inside a long multi-line draft. Scrolling the editor itself leaves the hint alone.",
+    ],
+    features: offAll,
+    placeholder: "Scroll the conversation up…",
+    hint: true,
+    hideHintOnScrollUp: true,
+    code: `import { Composer } from "composeai";
+import "composeai/composer.css";
+
+export function PinnedComposer() {
+  return (
+    <div style={{ position: "fixed", insetInline: 0, bottom: 16 }}>
+      <Composer
+        placeholder="Scroll the conversation up…"
+        // Collapses the hint while the page scrolls up; back on scroll down.
+        hideHintOnScrollUp
+        onSend={(payload) => console.log(payload)}
+      />
+    </div>
   );
 }
 `,

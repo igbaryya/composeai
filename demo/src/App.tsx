@@ -240,6 +240,7 @@ export function App() {
                   initialValue={demo.initialValue}
                   features={demo.features}
                   hint={resolveDemoHint(demo)}
+                  hideHintOnScrollUp={demo.hideHintOnScrollUp}
                   toolbarExtras={demo.toolbarExtras}
                   mode={demo.mode}
                   variant={demo.variant}

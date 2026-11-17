@@ -1050,6 +1050,27 @@ export interface ComposerProps {
   /** Hint text under the composer. `false` hides; `true` shows default. */
   hint?: boolean | ReactNode;
   /**
+   * Collapse the {@link hint} while the page scrolls up, and bring it back as
+   * soon as it scrolls down. Defaults to `false`.
+   *
+   * Meant for a composer pinned to the bottom of the viewport (`position:
+   * fixed` / `sticky`): while the user reads back through the history, the
+   * hint leaves the layout entirely — height and the gap above it — so the
+   * card drops to the bottom edge and covers less of the conversation.
+   *
+   * Works with whatever scrolls: the window or an inner message list. Scrolls
+   * inside the composer itself (the editor, its menus) are ignored. While
+   * collapsed the hint is also hidden from assistive tech.
+   *
+   * @example
+   * ```tsx
+   * <div style={{ position: "fixed", insetInline: 0, bottom: 16 }}>
+   *   <Composer hideHintOnScrollUp onSend={send} />
+   * </div>
+   * ```
+   */
+  hideHintOnScrollUp?: boolean;
+  /**
    * Editor mode.
    *   - `"markdown"` (default): rich-text editor that understands markdown.
    *     Enables block shortcuts (`# `, `- `, `> `, ```` ``` ````), inline

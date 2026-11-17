@@ -2,9 +2,12 @@ import { useMemo } from "react";
 import type { ReactNode } from "react";
 import { slotProps } from "../internal/sx";
 import { useComposerContext } from "../core/ComposerProvider";
+import { useHideOnScrollUp } from "../hooks/useHideOnScrollUp";
 
 interface Props {
   hint: boolean | ReactNode;
+  /** See `ComposerProps.hideHintOnScrollUp`. */
+  hideOnScrollUp?: boolean;
 }
 
 function Key({ children }: { children: ReactNode }) {
@@ -51,7 +54,7 @@ function formatShortcut(spec: string): ReactNode {
   return labels.join(" + ");
 }
 
-export function HintBar({ hint }: Props) {
+export function HintBar({ hint, hideOnScrollUp }: Props) {
   const {
     multiline,
     submitOnEnter,
@@ -99,23 +102,36 @@ export function HintBar({ hint }: Props) {
     );
   }, [focusShortcut]);
 
+  const autoHide = !!hideOnScrollUp && !!hint;
+  const hidden = useHideOnScrollUp(autoHide);
+
   if (!hint) return null;
   const hintProps = slotProps("hint", "composer-hint", classNames, sx);
+  // The inner span is what collapses: the `<p>` becomes a one-row grid that
+  // animates that row down to 0fr, which needs the content in a single child.
+  // It's inert markup unless `data-autohide` is set.
   return (
-    <p {...hintProps}>
-      {hint === true ? (
-        <>
-          AI can make mistakes — verify important info.
-          {defaultShortcuts ? (
-            <span className="composer-hint-sm"> {defaultShortcuts}</span>
-          ) : null}
-          {focusHint ? (
-            <span className="composer-hint-md">{focusHint}</span>
-          ) : null}
-        </>
-      ) : (
-        hint
-      )}
+    <p
+      {...hintProps}
+      data-autohide={autoHide ? "" : undefined}
+      data-hidden={hidden ? "" : undefined}
+      aria-hidden={hidden || undefined}
+    >
+      <span className="composer-hint-inner">
+        {hint === true ? (
+          <>
+            AI can make mistakes — verify important info.
+            {defaultShortcuts ? (
+              <span className="composer-hint-sm"> {defaultShortcuts}</span>
+            ) : null}
+            {focusHint ? (
+              <span className="composer-hint-md">{focusHint}</span>
+            ) : null}
+          </>
+        ) : (
+          hint
+        )}
+      </span>
     </p>
   );
 }

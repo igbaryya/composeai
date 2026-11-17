@@ -737,6 +737,8 @@
 .composer-root {
   display: flex;
   flex-direction: column;
+  /* Cancelled by the hidden hint's negative margin (`hideHintOnScrollUp`) —
+   * keep the two in step. */
   gap: 0.5rem;
 }
 
@@ -2183,6 +2185,45 @@ button.composer-context-chip-body {
 @media (min-width: 768px) {
   .composer-hint-md {
     display: inline;
+  }
+}
+
+/* `hideHintOnScrollUp`: the hint collapses out of the layout rather than just
+ * fading, so a composer pinned to the bottom of the viewport sits lower while
+ * the user scrolls back through the history. The `<p>` is a one-row grid whose
+ * row animates 1fr → 0fr (the height can't be interpolated from `auto`), and a
+ * negative start margin takes back the `.composer-root` gap above it — keep
+ * the two in step. The end margin goes to 0 as well: without a CSS reset the
+ * `<p>` keeps its 1em user-agent margin, which would otherwise hold space.
+ * Visibility flips only once the collapse finishes, so the hint leaves the
+ * accessibility tree without cutting the animation short. */
+.composer-hint[data-autohide] {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-block-start 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-block-end 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.16s ease, visibility 0s linear 0s;
+}
+.composer-hint[data-autohide] > .composer-hint-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.composer-hint[data-autohide][data-hidden] {
+  grid-template-rows: 0fr;
+  margin-block-start: -0.5rem;
+  margin-block-end: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-block-start 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-block-end 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.16s ease, visibility 0s linear 0.22s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-hint[data-autohide],
+  .composer-hint[data-autohide][data-hidden] {
+    transition: none;
   }
 }
 
