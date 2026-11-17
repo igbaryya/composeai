@@ -104,6 +104,12 @@ export interface DemoSpec {
   /** Attachment lifecycle & rules forwarded to <Composer />. */
   attachmentOptions?: AttachmentOptions;
   hint?: boolean | ReactNode;
+  /**
+   * A conversation already on screen when the demo opens, rendered between
+   * the intro and anything you send. For demos that need a long, scrollable
+   * history to show off (e.g. hint auto-hide). `text` is markdown.
+   */
+  history?: Array<{ role: "user" | "assistant"; text: string }>;
   /** See `ComposerProps.hideHintOnScrollUp`. */
   hideHintOnScrollUp?: ComposerProps["hideHintOnScrollUp"];
   toolbarExtras?: ReactNode;
@@ -197,6 +203,49 @@ const CONTEXT_SOURCES: ContextItem[] = [
     description: "lexical.dev/docs/intro",
     icon: <Globe2 className="h-3.5 w-3.5" />,
   },
+];
+
+/**
+ * A long chat for the "hint auto-hide" demo, so there's real history to
+ * scroll back through above a pinned composer.
+ */
+const HINT_AUTO_HIDE_HISTORY: NonNullable<DemoSpec["history"]> = [
+  { role: "user", text: "I'm building a support chat. The composer is pinned to the bottom of the screen. What should I watch out for?" },
+  {
+    role: "assistant",
+    text: "A pinned composer always covers part of the conversation, so keep it small:\n\n- **Short chrome**: one row at rest, growing only while someone types.\n- **Secondary text off the hot path**: hints and disclaimers matter on the first message, much less on the fortieth.\n- **Room at the end**: pad the message list by the composer's height so the last message is never hidden behind it.",
+  },
+  { role: "user", text: "The hint line under the input takes space I'd rather give to the messages. Can I just hide it?" },
+  {
+    role: "assistant",
+    text: "You can pass `hint={false}`, but then nobody learns that **Shift + Enter** adds a new line. A middle ground is to keep it while the user is at the latest message and collapse it while they read back through history. That's what `hideHintOnScrollUp` does.",
+  },
+  { role: "user", text: "Does it need to know which element scrolls? My messages are in their own scroll container, not the window." },
+  {
+    role: "assistant",
+    text: "No. It listens to every scroll on the page and tracks each scroller separately, so the window and an inner list both work. Scrolls inside the composer itself (a long draft, the mention menu) are ignored.",
+  },
+  { role: "user", text: "What does \"collapse\" mean here? Fade out?" },
+  {
+    role: "assistant",
+    text: "It leaves the layout entirely: its height and the gap above it both go to zero, so a bottom-pinned card drops to the edge of the screen. It's also hidden from screen readers while collapsed, and the animation is skipped under `prefers-reduced-motion`.",
+  },
+  { role: "user", text: "And it comes back when?" },
+  {
+    role: "assistant",
+    text: "As soon as the page scrolls down again. Small movements are ignored (it waits for about 8px in one direction) so trackpad jitter doesn't make it flicker.",
+  },
+  { role: "user", text: "Can I see the setup?" },
+  {
+    role: "assistant",
+    text: "```tsx\n<div style={{ position: \"fixed\", insetInline: 0, bottom: 16 }}>\n  <Composer hideHintOnScrollUp onSend={send} />\n</div>\n```\n\nThat's all. It works the same when the composer sits under the message list in a flex column instead of being fixed.",
+  },
+  { role: "user", text: "Nice. Last thing: will it fight with my own scroll-to-bottom when a new message arrives?" },
+  {
+    role: "assistant",
+    text: "No. Scrolling to the bottom is a scroll down, so the hint comes back with the new message. That's the moment the user is back at the latest turn and about to type.",
+  },
+  { role: "user", text: "Perfect. Scroll up through this thread and watch the hint under the composer." },
 ];
 
 /** Models the "model picker" demo offers. */
@@ -1996,14 +2045,16 @@ export function HintComposer() {
       </>
     ),
     tryIt: [
-      "Scroll this panel up. The hint under the composer collapses and the card drops into its space.",
-      "Scroll back down. The hint comes back.",
+      "Scroll down through the conversation below to the latest message.",
+      "Now scroll up. The hint under the composer collapses and the card drops into its space.",
+      "Scroll down again. The hint comes back, even right at the end of the conversation.",
       "Scroll inside a long multi-line draft. Scrolling the editor itself leaves the hint alone.",
     ],
     features: offAll,
     placeholder: "Scroll the conversation up…",
     hint: true,
     hideHintOnScrollUp: true,
+    history: HINT_AUTO_HIDE_HISTORY,
     code: `import { Composer } from "composeai";
 import "composeai/composer.css";
 

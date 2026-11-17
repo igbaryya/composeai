@@ -210,6 +210,21 @@ export function App() {
             >
               <EmptyState demo={demo} />
 
+              {demo.history && demo.history.length > 0 && (
+                <ul className="mt-6 space-y-3">
+                  {demo.history.map((entry, i) =>
+                    entry.role === "user" ? (
+                      <Bubble
+                        key={i}
+                        turn={{ id: `history-${i}`, text: entry.text, attachments: [], mentions: [] }}
+                      />
+                    ) : (
+                      <AssistantBubble key={i} text={entry.text} />
+                    ),
+                  )}
+                </ul>
+              )}
+
               {turns.length > 0 && (
                 <ul className="mt-6 space-y-3">
                   {turns.map((turn) => (
@@ -278,6 +293,17 @@ function Bubble({ turn }: { turn: ChatTurn }) {
             📎 {turn.attachments.map((a) => a.name).join(", ")}
           </div>
         )}
+      </div>
+    </li>
+  );
+}
+
+/** The other side of a seeded `demo.history` conversation. */
+function AssistantBubble({ text }: { text: string }) {
+  return (
+    <li className="flex w-full justify-start">
+      <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
+        <MessageContent text={text} />
       </div>
     </li>
   );
