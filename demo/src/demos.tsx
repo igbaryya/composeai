@@ -4,6 +4,7 @@
  */
 import { useState, type ReactNode, type Ref, type RefObject } from "react";
 import {
+  Bot,
   Brush,
   Code2,
   CornerDownLeft,
@@ -48,6 +49,7 @@ import type {
   ComposerTokens,
   ContextItem,
   MentionItem,
+  ModelOption,
   SlashCommand,
 } from "composeai";
 
@@ -193,6 +195,13 @@ const CONTEXT_SOURCES: ContextItem[] = [
     description: "lexical.dev/docs/intro",
     icon: <Globe2 className="h-3.5 w-3.5" />,
   },
+];
+
+/** Models the "model picker" demo offers. */
+const MODEL_OPTIONS: ModelOption[] = [
+  { id: "opus", label: "Opus 5.5", description: "Most capable for complex work" },
+  { id: "sonnet", label: "Sonnet 5.5", description: "Smart, efficient everyday model" },
+  { id: "haiku", label: "Haiku 5.5", description: "Fastest for quick answers" },
 ];
 
 const SLASH: SlashCommand[] = [
@@ -1968,6 +1977,69 @@ export function HintComposer() {
   },
 
   {
+    id: "model-picker",
+    title: "Model picker",
+    group: "Control",
+    icon: <Bot className="h-4 w-4" />,
+    tagline: "Show the current model and switch it",
+    description: (
+      <>
+        <code>model</code> renders a pill naming the current model; click it
+        to open a menu of <code>items</code> and switch. In the compact
+        variant it sits beside Send, so it stays on screen instead of
+        collapsing into the <code>+</code> menu; in the full variant it sits
+        in the toolbar. The value is controlled: picking fires{" "}
+        <code>onChange</code>, you store the id and pass it back as{" "}
+        <code>value</code>. The current model rides along on{" "}
+        <code>onSend</code> as <code>payload.model</code>.
+      </>
+    ),
+    tryIt: [
+      "Click the model pill beside Send — the current model is checked.",
+      "Pick another model — the pill updates and focus lands back in the editor.",
+      "Open the menu with the keyboard: Tab to the pill, Enter, then ↑ / ↓ and Enter.",
+      "Flip compact / full — the pill moves from beside Send into the toolbar.",
+      "Send a message — payload.model carries the option you picked.",
+    ],
+    features: offAll,
+    placeholder: "Ask anything…",
+    renderComposer: ({ ref, onSend, placeholder }) => (
+      <ModelPickerDemo
+        composerRef={ref}
+        onSend={onSend}
+        placeholder={placeholder}
+      />
+    ),
+    code: `import { useState } from "react";
+import { Composer, type ModelOption } from "composeai";
+import "composeai/composer.css";
+
+const MODELS: ModelOption[] = [
+  { id: "opus", label: "Opus 5.5", description: "Most capable for complex work" },
+  { id: "sonnet", label: "Sonnet 5.5", description: "Smart, efficient everyday model" },
+  { id: "haiku", label: "Haiku 5.5", description: "Fastest for quick answers" },
+];
+
+export function ModelPickerComposer() {
+  // The value is yours — the composer shows it and echoes it back.
+  const [modelId, setModelId] = useState("sonnet");
+
+  return (
+    <Composer
+      placeholder="Ask anything…"
+      model={{
+        items: MODELS,
+        value: modelId,
+        onChange: (model) => setModelId(model.id),
+      }}
+      onSend={({ text, model }) => ask(text, { model: model?.id })}
+    />
+  );
+}
+`,
+  },
+
+  {
     id: "toolbar-extras",
     title: "Toolbar extras",
     group: "Control",
@@ -1976,25 +2048,26 @@ export function HintComposer() {
     description: (
       <>
         Pass any node via <code>toolbarExtras</code> and it renders after the
-        built-in icons. Great for a model picker, persona switcher, or
-        feature flag toggle.
+        built-in icons. Great for a tone selector, persona switcher, or
+        feature flag toggle. For switching models, use the built-in{" "}
+        <code>model</code> prop instead.
       </>
     ),
-    tryIt: ["Use the model picker in the toolbar."],
+    tryIt: ["Use the tone selector in the toolbar."],
     features: offAll,
-    placeholder: "Notice the model picker in the toolbar…",
+    placeholder: "Notice the tone selector in the toolbar…",
     toolbarExtras: (
       <div className="ml-1 flex items-center gap-1">
         <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          Model
+          Tone
         </span>
         <select
-          defaultValue="GPT-4o"
+          defaultValue="Balanced"
           className="h-7 rounded-md border border-border bg-background px-1.5 text-xs"
         >
-          <option>GPT-4o</option>
-          <option>Claude Opus</option>
-          <option>Llama 3</option>
+          <option>Concise</option>
+          <option>Balanced</option>
+          <option>Detailed</option>
         </select>
       </div>
     ),
@@ -2002,28 +2075,28 @@ export function HintComposer() {
 import { Composer } from "composeai";
 import "composeai/composer.css";
 
-export function ModelPickerComposer() {
-  const [model, setModel] = useState("GPT-4o");
+export function ToneComposer() {
+  const [tone, setTone] = useState("Balanced");
 
   return (
     <Composer
-      placeholder="Notice the model picker in the toolbar…"
+      placeholder="Notice the tone selector in the toolbar…"
       onSend={(payload) => {
-        console.log({ model, text: payload.text });
+        console.log({ tone, text: payload.text });
       }}
       toolbarExtras={
         <div className="ml-1 flex items-center gap-1">
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Model
+            Tone
           </span>
           <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
+            value={tone}
+            onChange={(e) => setTone(e.target.value)}
             className="h-7 rounded-md border bg-background px-1.5 text-xs"
           >
-            <option>GPT-4o</option>
-            <option>Claude Opus</option>
-            <option>Llama 3</option>
+            <option>Concise</option>
+            <option>Balanced</option>
+            <option>Detailed</option>
           </select>
         </div>
       }
@@ -3478,6 +3551,71 @@ function BrandColorDemo({
           web: true,
           voice: false,
           mermaid: false,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Drives the `model` demo. The current model id lives here — in a real app it
+ * would be the conversation's setting — and the composer only shows it, so
+ * switching is just a state update. The variant toggle shows where the pill
+ * lands in each layout.
+ */
+function ModelPickerDemo({
+  composerRef,
+  onSend,
+  placeholder,
+}: {
+  composerRef: Ref<ComposerHandle>;
+  onSend: (payload: ComposerSubmitPayload) => void;
+  placeholder: string;
+}) {
+  const [modelId, setModelId] = useState("sonnet");
+  const [variant, setVariant] = useState<"compact" | "full">("compact");
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card/40 px-4 py-3">
+        <span className="text-xs font-medium text-muted-foreground">
+          Layout
+        </span>
+        <div className="flex items-center gap-1 rounded-full border border-border/80 p-0.5">
+          {(["compact", "full"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setVariant(option)}
+              aria-pressed={variant === option}
+              className={
+                "rounded-full px-2.5 py-1 font-mono text-[11px] transition " +
+                (variant === option
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Composer
+        ref={composerRef}
+        placeholder={placeholder}
+        autoFocus
+        variant={variant}
+        onSend={(payload) => {
+          console.log("[model-picker] sent to:", payload.model);
+          onSend(payload);
+        }}
+        hint={`variant="${variant}" · model.value="${modelId}"`}
+        features={offAll}
+        model={{
+          items: MODEL_OPTIONS,
+          value: modelId,
+          onChange: (model) => setModelId(model.id),
         }}
       />
     </div>

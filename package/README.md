@@ -210,6 +210,7 @@ const ref = useRef<ComposerHandle>(null);
 | `prompts`                  | `ComposerPromptsConfig`               | —             | Starter-prompt chips above the composer. Click types the prompt in (`initValue`).   |
 | `attachmentOptions`        | `AttachmentOptions`                   | —             | `uploadFirst`, `onUpload`, `canSendOnlyAttachment`.                                |
 | `inContext`                | `ContextItem[] \| InContextConfig`    | —             | "In context" chip row above the editor (or inline beside Send); echoed on `payload.inContext`. |
+| `model`                    | `ModelPickerConfig`                   | —             | Model picker pill showing the current model; echoed on `payload.model`.            |
 | `closeMenusOnOutsideClick` | `boolean`                             | `true`        | Close typeahead menus on outside click.                                            |
 | `dir`                      | `"ltr" \| "rtl" \| "auto"`            | `"ltr"`       | Writing direction. Flips chrome via CSS logical properties.                        |
 | `toolbarExtras`            | `ReactNode`                           | —             | Custom controls appended to the toolbar.                                           |
@@ -273,6 +274,7 @@ interface ComposerSubmitPayload {
   attachments: Attachment[];
   mentions: MentionRef[]; // { id, label }[] — id is stable across label edits
   inContext: ContextItem[]; // snapshot of the `inContext` prop, minus withheld items
+  model: ModelOption | null; // the `model` prop's current option; null when unused
 }
 ```
 
@@ -337,6 +339,48 @@ Dismissing a chip is a single click, so it must not be a one-way door. Handle
 Filtering the item out of `items` still works and is still permanent; it's the
 right call only when the item is genuinely gone (the file closed, the ticket
 unlinked), not when the user merely clicked `×`.
+
+## Model picker
+
+`model` puts a pill naming the current model in the action band; clicking it
+opens a menu of `items`, with the current one checked. Where it sits follows the
+voice button:
+
+- **compact** (default) — beside Send, so the current model stays on screen
+  instead of collapsing into the "+" menu the way `toolbarExtras` does.
+- **full** — in the toolbar, after the built-in buttons and `toolbarExtras`.
+
+Like `inContext` it is **controlled**: picking a model fires `onChange` and
+nothing else. Store the id, pass it back as `value`, and the pill follows.
+
+```tsx
+const MODELS: ModelOption[] = [
+  { id: "opus", label: "Opus 5.5", description: "Most capable for complex work" },
+  { id: "sonnet", label: "Sonnet 5.5", description: "Smart, efficient everyday model" },
+  { id: "haiku", label: "Haiku 5.5", description: "Fastest for quick answers" },
+];
+
+const [modelId, setModelId] = useState("sonnet");
+
+<Composer
+  model={{
+    items: MODELS,
+    value: modelId,
+    onChange: (model) => setModelId(model.id),
+  }}
+  onSend={({ text, model }) => ask(text, { model: model?.id })}
+/>;
+```
+
+Each option is `{ id, label, description?, icon? }`: `description` is the menu
+row's second line, `icon` leads the row and the pill. A `value` that isn't in
+`items` (a retired model on an old conversation) still shows, as the raw id,
+and `payload.model` is `{ id, label: id }`, so what the user sees is what gets
+sent. An empty `items` hides the picker. `label` (default `"Model"`) names the
+trigger and menu for screen readers. Picking a model hands focus back to the
+editor; the menu is keyboard-navigable (↑ / ↓ / Home / End / Enter / Escape).
+Style it via the `modelButton` / `modelMenu` / `modelItem` slots, and swap the
+caret and checkmark via `icons.chevron` / `icons.check`.
 
 ## Bundle impact
 

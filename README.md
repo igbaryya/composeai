@@ -58,6 +58,7 @@ Or explore the hosted gallery at **[igbaryya.github.io/composeai](https://igbary
 | Mermaid diagrams                | `mermaid` is an **optional** peer dep — lazy-imported, or pass `renderDiagram` to skip entirely   |
 | Quick prompts                   | Starter chips above the composer — one scrolling line; `initValue` (default) or `sendValue`       |
 | In context                      | `inContext` chip row (top or bottom edge) showing what rides along; echoed on `payload.inContext` |
+| Model picker                    | `model` pill naming the current model, with a menu to switch it; echoed on `payload.model`        |
 | Animated placeholder            | `animatedPlaceholder={["…", "…"]}` types phrases out token-by-token while the editor is empty     |
 | Slots                           | Replace any chrome piece wholesale (currently `sendButton`, `stopButton`) via render-prop slots   |
 | Theming                         | `color` shorthand, full `tokens` map, `classNames` + `sx` per-slot, dark-mode-friendly            |

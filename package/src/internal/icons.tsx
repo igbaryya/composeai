@@ -167,6 +167,16 @@ export const IconSparkle = makeIcon(
   </>,
 );
 
+export const IconChevron = makeIcon(
+  "IconChevron",
+  <path d="m6 9 6 6 6-6" />,
+);
+
+export const IconCheck = makeIcon(
+  "IconCheck",
+  <path d="M20 6 9 17l-5-5" />,
+);
+
 export const IconSpinner = makeIcon(
   "IconSpinner",
   <path d="M21 12a9 9 0 1 1-6.219-8.56" />,
@@ -217,6 +227,10 @@ export interface ComposerIcons {
   context: IconComponent;
   /** Decorative sparkle (suggestions, diagram preview header). */
   sparkle: IconComponent;
+  /** Model picker: the disclosure caret on the trigger pill. */
+  chevron: IconComponent;
+  /** Model picker: marks the current model in the menu. */
+  check: IconComponent;
   /** Generic loading spinner (used on attachment chips during upload). */
   spinner: IconComponent;
   /** Generic warning / failure badge (used on failed-upload chips). */
@@ -239,6 +253,8 @@ export const DEFAULT_ICONS: ComposerIcons = {
   audio: IconAudio,
   context: IconContext,
   sparkle: IconSparkle,
+  chevron: IconChevron,
+  check: IconCheck,
   spinner: IconSpinner,
   warning: IconWarning,
 };

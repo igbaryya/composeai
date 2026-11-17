@@ -29,6 +29,9 @@ export type ComposerSlot =
   | "mentionItem"
   | "slashMenu"
   | "slashItem"
+  | "modelButton"
+  | "modelMenu"
+  | "modelItem"
   | "mermaidPreview";
 
 /**
@@ -354,6 +357,43 @@ export interface InContextConfig {
   label?: string;
 }
 
+/**
+ * One entry in the model picker — see {@link ComposerProps.model}.
+ */
+export interface ModelOption {
+  /** Stable identifier — what {@link ModelPickerConfig.value} holds, and what you route on. */
+  id: string;
+  /** Display name on the trigger pill and the menu row, e.g. `"Opus 5.5"`. */
+  label: string;
+  /** Second line on the menu row, e.g. `"Most capable for complex work"`. */
+  description?: string;
+  /** Leading glyph on the menu row, and on the trigger while this model is current. */
+  icon?: ReactNode;
+}
+
+/**
+ * Config for {@link ComposerProps.model}.
+ *
+ * The value is **controlled**: the composer holds no copy of it. Picking a row
+ * fires `onChange` and nothing else — store the choice, pass it back as
+ * `value`, and the trigger follows on the next render.
+ */
+export interface ModelPickerConfig {
+  /** Models to choose from, in menu order. An empty list hides the picker. */
+  items: ModelOption[];
+  /**
+   * `id` of the current model. An id missing from `items` (a retired model on
+   * an old conversation, say) still shows: the trigger reads the raw id and
+   * {@link ComposerSubmitPayload.model} carries `{ id, label: id }`, so what
+   * the user sees is always what gets sent.
+   */
+  value: string;
+  /** Fires when the user picks a model other than the current one. */
+  onChange: (model: ModelOption) => void;
+  /** Accessible name for the trigger and the menu. Defaults to `"Model"`. */
+  label?: string;
+}
+
 export interface ComposerSubmitPayload {
   /** Plain text (chips collapsed to their labels). */
   text: string;
@@ -371,6 +411,11 @@ export interface ComposerSubmitPayload {
    * are still on the row waiting to be restored.
    */
   inContext: ContextItem[];
+  /**
+   * The model this turn is for — the option {@link ComposerProps.model}'s
+   * `value` resolves to at submit time. `null` when the prop isn't used.
+   */
+  model: ModelOption | null;
 }
 
 /**
@@ -1197,6 +1242,35 @@ export interface ComposerProps {
    * ```
    */
   inContext?: ContextItem[] | InContextConfig;
+  /**
+   * Model picker: a pill naming the current model, which opens a menu of
+   * `items` to switch. It sits in the action band — inside the toolbar in the
+   * `full` variant, beside Send in the `compact` one, where it stays on screen
+   * instead of collapsing into the "+" menu the way `toolbarExtras` does. The
+   * current model rides along on `onSend`'s
+   * {@link ComposerSubmitPayload.model}.
+   *
+   * Controlled — see {@link ModelPickerConfig}.
+   *
+   * @example
+   * ```tsx
+   * const [modelId, setModelId] = useState("sonnet");
+   *
+   * <Composer
+   *   model={{
+   *     items: [
+   *       { id: "opus", label: "Opus 5.5", description: "Most capable for complex work" },
+   *       { id: "sonnet", label: "Sonnet 5.5", description: "Smart, efficient everyday model" },
+   *       { id: "haiku", label: "Haiku 5.5", description: "Fastest for quick answers" },
+   *     ],
+   *     value: modelId,
+   *     onChange: (m) => setModelId(m.id),
+   *   }}
+   *   onSend={({ text, model }) => ask(text, { model: model?.id })}
+   * />
+   * ```
+   */
+  model?: ModelPickerConfig;
   /**
    * Attachment lifecycle and submission rules — `uploadFirst` for
    * server-side upload pipelines (spinner + warning chip states),

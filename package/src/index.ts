@@ -48,6 +48,8 @@ export type {
   MentionItem,
   MentionRef,
   MermaidConfig,
+  ModelOption,
+  ModelPickerConfig,
   SendButtonRenderProps,
   SlashCommand,
   SlashCommandContext,

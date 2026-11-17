@@ -22,6 +22,8 @@ import type {
   DiagramRenderer,
   InContextConfig,
   MarkdownMode,
+  ModelOption,
+  ModelPickerConfig,
 } from "../types";
 import { resolveIcons, type ComposerIcons } from "../internal/icons";
 
@@ -33,6 +35,12 @@ type RunPromptCallback = (
   prompt: string,
   behavior: ComposerPromptBehavior,
 ) => void;
+
+/** {@link ModelPickerConfig} plus the option its `value` resolves to. */
+interface ResolvedModelPicker {
+  config: ModelPickerConfig;
+  current: ModelOption;
+}
 
 interface ComposerContextValue {
   features: Required<ComposerFeatures>;
@@ -67,6 +75,13 @@ interface ComposerContextValue {
    * tray and the submit pipeline can both branch on a single truthiness check.
    */
   inContext: InContextConfig | null;
+  /**
+   * Normalized {@link ComposerProps.model} — the config together with the
+   * option its `value` resolves to, or `null` when there is no picker to show.
+   * The picker reads `current` for its trigger and the submit pipeline reads
+   * it for `payload.model`, so the two can never disagree.
+   */
+  model: ResolvedModelPicker | null;
   /**
    * Resolved markdown rendering mode. Derived from `features.markdown`:
    *   - `markdown: true` / `markdown: undefined` → `"hybrid"`
@@ -186,6 +201,23 @@ function normalizeInContext(
   return config.items.length > 0 ? config : null;
 }
 
+/**
+ * Resolve the picker's `value` to its option. An id missing from `items`
+ * still resolves — to a bare `{ id, label: id }` — so the trigger and the
+ * submit payload report the same model either way. An empty list means
+ * there's nothing to pick from, so no picker.
+ */
+function normalizeModel(
+  model?: ModelPickerConfig,
+): ResolvedModelPicker | null {
+  if (!model || model.items.length === 0) return null;
+  const current = model.items.find((item) => item.id === model.value) ?? {
+    id: model.value,
+    label: model.value,
+  };
+  return { config: model, current };
+}
+
 function detectKind(file: File): Attachment["kind"] {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("audio/")) return "audio";
@@ -203,6 +235,7 @@ interface ProviderProps {
   closeMenusOnOutsideClick?: boolean;
   attachmentOptions?: AttachmentOptions;
   inContext?: ContextItem[] | InContextConfig;
+  model?: ModelPickerConfig;
   mode?: ComposerMode;
   variant?: "compact" | "full";
   multiline?: boolean;
@@ -226,6 +259,7 @@ export function ComposerProvider({
   closeMenusOnOutsideClick = true,
   attachmentOptions,
   inContext,
+  model,
   mode = "markdown",
   variant = "compact",
   multiline = true,
@@ -264,6 +298,7 @@ export function ComposerProvider({
     () => normalizeInContext(inContext),
     [inContext],
   );
+  const normalizedModel = useMemo(() => normalizeModel(model), [model]);
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [webEnabled, setWebEnabled] = useState(false);
@@ -461,6 +496,7 @@ export function ComposerProvider({
       closeMenusOnOutsideClick,
       attachmentOptions: normalizedAttachmentOptions,
       inContext: normalizedInContext,
+      model: normalizedModel,
       markdownMode,
       mode,
       variant,
@@ -496,6 +532,7 @@ export function ComposerProvider({
       closeMenusOnOutsideClick,
       normalizedAttachmentOptions,
       normalizedInContext,
+      normalizedModel,
       markdownMode,
       mode,
       variant,

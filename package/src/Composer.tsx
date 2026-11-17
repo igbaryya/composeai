@@ -46,6 +46,7 @@ import { MentionPlugin } from "./plugins/MentionPlugin";
 import { GhostedAutoCompletePlugin } from "./plugins/GhostedAutoCompletePlugin";
 import { AttachmentTray } from "./plugins/AttachmentTray";
 import { InContextTray } from "./ui/InContextTray";
+import { ModelPicker } from "./ui/ModelPicker";
 import { Toolbar } from "./ui/Toolbar";
 import { SendButton } from "./ui/SendButton";
 import { VoiceButton } from "./plugins/VoicePlugin";
@@ -99,6 +100,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     prompts,
     attachmentOptions,
     inContext,
+    model,
     dir,
     ariaLabel,
   } = props;
@@ -129,6 +131,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       closeMenusOnOutsideClick={closeMenusOnOutsideClick}
       attachmentOptions={attachmentOptions}
       inContext={inContext}
+      model={model}
       mode={mode}
       variant={variant}
       multiline={multiline}
@@ -355,6 +358,7 @@ function ComposerInner({
     registerRunPrompt,
     attachmentOptions,
     inContext,
+    model,
   } = useComposerContext();
   const canSendOnlyAttachment = attachmentOptions.canSendOnlyAttachment !== false;
   const hasUploadingAttachment = attachments.some((a) => a.status === "uploading");
@@ -425,6 +429,7 @@ function ComposerInner({
         inContext: inContext
           ? inContext.items.filter((item) => !item.withheld)
           : [],
+        model: model ? model.current : null,
       };
     });
     if (!payload) return;
@@ -471,6 +476,7 @@ function ComposerInner({
     canSendOnlyAttachment,
     uploadsBlocking,
     inContext,
+    model,
     linkedMention,
     typePrompt,
   ]);
@@ -623,19 +629,19 @@ function ComposerInner({
       onStop={onStop}
     />
   );
-  // In the compact variant the voice button leaves the toolbar (which has
-  // collapsed into the "+" popover) and floats beside Send as a trailing
-  // cluster. In the full variant voice stays in the toolbar and Send is
-  // rendered on its own.
-  const sendButtonSlot =
-    isCompact && features.voice ? (
-      <>
-        <VoiceButton />
-        {sendButton}
-      </>
-    ) : (
-      sendButton
-    );
+  // In the compact variant the toolbar has collapsed into the "+" popover, so
+  // whatever must stay on screen floats beside Send as a trailing cluster: the
+  // model picker (it names the current model) and the voice button. In the
+  // full variant both stay in the toolbar and Send is rendered on its own.
+  const sendButtonSlot = isCompact ? (
+    <>
+      <ModelPicker />
+      {features.voice && <VoiceButton />}
+      {sendButton}
+    </>
+  ) : (
+    sendButton
+  );
 
   const content = (
     <>

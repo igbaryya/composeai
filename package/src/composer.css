@@ -1474,6 +1474,110 @@
 }
 
 /* ----------------------------------------------------------------------------
+ * Model picker — a pill naming the current model, opening an upward menu that
+ * reuses the .composer-attach-menu / .composer-attach-item visuals. Lives in
+ * the toolbar (full variant) or beside Send (compact variant).
+ * ------------------------------------------------------------------------- */
+.composer-model-picker {
+  position: relative;
+  min-width: 0;
+}
+.composer-model-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2rem;
+  max-width: 12rem;
+  padding-inline: 0.625rem 0.5rem;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.composer-model-btn:hover,
+.composer-model-btn[data-active] {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+}
+.composer-model-btn-icon {
+  display: flex;
+  flex: none;
+}
+.composer-model-btn-icon svg {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+.composer-model-btn-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.composer-model-btn-caret {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex: none;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+.composer-model-btn[data-active] .composer-model-btn-caret {
+  transform: rotate(180deg);
+}
+
+.composer-model-menu {
+  min-width: 240px;
+  max-width: 320px;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+/* Beside Send (compact variant) the picker sits at the card's inline end, so
+ * the menu grows back toward the start rather than off the card's edge. */
+.composer-compact-send .composer-model-menu {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+}
+/* The compact row hands the editor whatever width is left over (basis 0, and
+ * the row wraps rather than shrinking anything), so a long model name would
+ * crush it on a phone. Capping the pill by the viewport keeps the editor
+ * usable; the label truncates and the full name stays in the tooltip. */
+.composer-compact-send .composer-model-btn {
+  max-width: min(12rem, 30vw);
+}
+.composer-model-item-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.composer-model-item-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+.composer-model-item-check {
+  display: flex;
+  height: 1rem;
+  width: 1rem;
+  flex: none;
+  color: hsl(var(--primary));
+}
+.composer-model-item-check svg {
+  height: 1rem;
+  width: 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-model-btn-caret {
+    transition: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
  * Attachment tray + chips.
  * ------------------------------------------------------------------------- */
 .composer-attachment-tray {

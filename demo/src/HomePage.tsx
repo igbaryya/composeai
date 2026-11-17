@@ -804,6 +804,14 @@ const COMPOSER_PROPS: PropRow[] = [
     description:
       'What\'s in context for the next turn — open files, docs, retrieved sources — rendered as a small chip row and echoed back on `payload.inContext`. `placement: "top"` (default) is a full-width row above the editor; `"bottom"` sits inline in the action band, sharing the row with Send. The list is controlled by you: `onRemove` makes chips dismissible, `onSelect` makes them clickable, and anything past `maxVisible` (default 3) collapses behind a `+N` pill. Handle `onRemove` by flagging the item `withheld` rather than deleting it — the chip stays struck through with a restore control (gated on `onRestore`), and withheld items are excluded from `payload.inContext`.',
   },
+  {
+    name: "model",
+    type: "ModelPickerConfig",
+    optional: true,
+    defaultValue: "—",
+    description:
+      'Model picker: a pill naming the current model that opens a menu of `items` to switch. Sits beside Send in the compact variant (so it never collapses into the "+" menu) and in the toolbar in the full one. Controlled — picking fires `onChange(model)`; store the id and pass it back as `value`. The current option is echoed on `payload.model`. A `value` missing from `items` still shows, as the raw id.',
+  },
 
   // ── Editor behavior ──────────────────────────────────────────────────
   {
@@ -828,7 +836,7 @@ const COMPOSER_PROPS: PropRow[] = [
     optional: true,
     defaultValue: "—",
     description:
-      "Custom controls rendered after the built-in toolbar buttons (e.g. a model picker).",
+      "Custom controls rendered after the built-in toolbar buttons (e.g. a tone selector). In the compact variant they collapse into the \"+\" menu.",
   },
   {
     name: "multiline",

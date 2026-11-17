@@ -8,6 +8,7 @@ import { AttachmentTypePicker } from "./AttachmentTypePicker";
 import { QuickActionsMenu } from "./QuickActionsMenu";
 import { CustomActionButtons } from "./CustomActions";
 import { InContextTray } from "./InContextTray";
+import { ModelPicker } from "./ModelPicker";
 import { MermaidQuickAction } from "../plugins/MermaidPlugin";
 
 interface Props {
@@ -146,6 +147,7 @@ function FullToolbar({ extras, submit }: Props) {
       )}
       <CustomActionButtons submit={submit ?? (() => {})} />
       {extras}
+      <ModelPicker />
       <InContextTray at="bottom" />
     </div>
   );
