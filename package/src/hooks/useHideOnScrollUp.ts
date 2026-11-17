@@ -12,8 +12,17 @@
  *
  * Scrolls inside a composer (the editor's own overflow, its menus, the quick
  * prompt row) are ignored: they aren't the page moving.
+ *
+ * Near the end of a scroller the hint stays put. When the composer sits in
+ * the same flex column as the message list (the usual chat layout, as opposed
+ * to `position: fixed`), collapsing the hint makes the list taller by exactly
+ * the space the hint held, which pulls the list's end toward the reader. Hide
+ * any closer to the end than that and the browser clamps the scroll position
+ * onto the new end — leaving no room to scroll down, so the hint could never
+ * come back. Hiding only with more than that space (plus the tolerance) still
+ * below guarantees the reader can always scroll down far enough to restore it.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
 /**
  * Movement, in px, that must build up in one direction before it counts.
@@ -22,7 +31,10 @@ import { useEffect, useState } from "react";
  */
 const TOLERANCE = 8;
 
-export function useHideOnScrollUp(enabled: boolean): boolean {
+export function useHideOnScrollUp(
+  enabled: boolean,
+  hintRef: RefObject<HTMLElement | null>,
+): boolean {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -35,36 +47,55 @@ export function useHideOnScrollUp(enabled: boolean): boolean {
       if (target instanceof Element && target.closest("[data-composer-scope]")) {
         return;
       }
-      const top = readScrollTop(target);
+      const scroller =
+        target instanceof Element ? target : document.scrollingElement;
+      if (!scroller) return;
+      const { top, max } = readScroll(scroller);
       const anchor = anchors.get(target);
       if (anchor === undefined) {
         anchors.set(target, top);
         return;
       }
-      const delta = top - anchor;
-      if (Math.abs(delta) < TOLERANCE) return;
+      if (Math.abs(top - anchor) < TOLERANCE) return;
       anchors.set(target, top);
-      setHidden(delta < 0);
+      if (top > anchor) {
+        setHidden(false);
+        return;
+      }
+      const hint = hintRef.current;
+      if (hint && max - top > heldSpace(hint) + TOLERANCE) setHidden(true);
     };
     document.addEventListener("scroll", onScroll, { capture: true, passive: true });
     return () => {
       document.removeEventListener("scroll", onScroll, { capture: true });
       setHidden(false);
     };
-  }, [enabled]);
+  }, [enabled, hintRef]);
 
   return enabled && hidden;
 }
 
 /**
- * Scroll offset of the element that fired the event (`document` for the
- * window), clamped to its real range — iOS rubber-banding past either end
- * otherwise reports a bounce back as a scroll in the opposite direction.
+ * Scroll offset and its maximum. The offset is clamped to the real range —
+ * iOS rubber-banding past either end otherwise reports the bounce back as a
+ * scroll in the opposite direction.
  */
-function readScrollTop(target: EventTarget): number {
-  const el =
-    target instanceof Element ? target : document.scrollingElement;
-  if (!el) return 0;
-  const max = el.scrollHeight - el.clientHeight;
-  return Math.min(Math.max(el.scrollTop, 0), Math.max(max, 0));
+function readScroll(scroller: Element): { top: number; max: number } {
+  const max = Math.max(scroller.scrollHeight - scroller.clientHeight, 0);
+  return { top: Math.min(Math.max(scroller.scrollTop, 0), max), max };
+}
+
+/**
+ * Space the hint adds to the composer: from the bottom of whatever sits
+ * above it (the card) to the bottom of the composer root — the root gap, the
+ * hint itself, and any margins a host without a CSS reset leaves on the
+ * `<p>`. That is how far a scroller's end can move when the hint collapses.
+ */
+function heldSpace(hint: HTMLElement): number {
+  const root = hint.parentElement;
+  const above = hint.previousElementSibling;
+  if (!root || !above) return hint.offsetHeight;
+  return (
+    root.getBoundingClientRect().bottom - above.getBoundingClientRect().bottom
+  );
 }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import { slotProps } from "../internal/sx";
 import { useComposerContext } from "../core/ComposerProvider";
@@ -102,8 +102,9 @@ export function HintBar({ hint, hideOnScrollUp }: Props) {
     );
   }, [focusShortcut]);
 
+  const hintRef = useRef<HTMLParagraphElement>(null);
   const autoHide = !!hideOnScrollUp && !!hint;
-  const hidden = useHideOnScrollUp(autoHide);
+  const hidden = useHideOnScrollUp(autoHide, hintRef);
 
   if (!hint) return null;
   const hintProps = slotProps("hint", "composer-hint", classNames, sx);
@@ -112,6 +113,7 @@ export function HintBar({ hint, hideOnScrollUp }: Props) {
   // It's inert markup unless `data-autohide` is set.
   return (
     <p
+      ref={hintRef}
       {...hintProps}
       data-autohide={autoHide ? "" : undefined}
       data-hidden={hidden ? "" : undefined}
